@@ -3,7 +3,7 @@ import time
 
 # 1. Connexion au contrôleur de vol
 # (Remplacez '/dev/serial0' par le port qui a fonctionné lors de votre test !)
-PORT = '/dev/serial0'
+PORT = '/dev/ttyAMA0'
 BAUD = 115200
 
 print(f"Connexion à ArduPilot sur {PORT}...")
