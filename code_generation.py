@@ -4,7 +4,7 @@ import os
 
 # --- CONFIGURATION ---
 OUTPUT_FOLDER = "codes"
-NUM_MARKERS = 50
+NUM_MARKERS = 5
 
 # Dimensions A4 à 300 DPI (Standard impression haute qualité)
 # Largeur: 210mm -> ~2480 pixels
