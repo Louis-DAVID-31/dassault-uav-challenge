@@ -1,0 +1,29 @@
+{
+    "folders" : {
+        "save_folder": "verified_markers",
+        "log_folder": "logs"
+    },
+
+    "algorithm": {
+        "target_ids": [0,1,2,3,4],
+        "min_detections": 4,
+        "frame_window": 15
+    },
+
+    "aruco_parameters": {
+        "minMarkerPerimeterRate": 0.005,
+        "maxMarkerPerimeterRate": 4.0,
+        "polygonalApproxAccuracyRate": 0.05
+    },
+
+    "camera": {
+        "capture_source": 0,
+        "resolution_width": 1920,
+        "resolution_height": 1080
+    },
+
+    "live_feed": {
+        "show_real_feed": true,
+        "show_processed_feed" : false
+    }
+}

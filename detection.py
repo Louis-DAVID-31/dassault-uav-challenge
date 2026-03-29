@@ -3,15 +3,25 @@ import numpy as np
 import os
 import time
 from datetime import datetime
+import json
 
 # ==========================================
 # 1. CONFIGURATION (Edit these before flight)
 # ==========================================
-SAVE_FOLDER = "verified_markers"
-LOG_FOLDER = "logs"
-TARGET_IDS = {0, 1, 2, 3, 4}  # Whitelist: Only look for these IDs
-MIN_DETECTIONS = 4            # Must be seen this many times...
-FRAME_WINDOW = 15             # ...within this many consecutive frames
+
+print("Loading configuration from config.json...")
+try:
+    with open('config.json', 'r') as config_file:
+        config = json.load(config_file)
+except FileNotFoundError:
+    print("CRITICAL ERROR: config.json not found! Cannot start vision system.")
+    exit(1)
+
+SAVE_FOLDER = config["folders"]["save_folder"]
+LOG_FOLDER = config["folders"]["log_folder"]
+TARGET_IDS = set(config["algorithm"]["target_ids"])  # Whitelist: Only look for these IDs
+MIN_DETECTIONS = config["algorithm"]["min_detections"]           # Must be seen this many times...
+FRAME_WINDOW = config["algorithm"]["frame_window"]
 
 # ==========================================
 # 2. SETUP & LOG FILE INITIALIZATION
@@ -41,15 +51,15 @@ write_log("TIME, FRAME, ID, EVENT, CONFIDENCE, CENTER_XY, CORNERS, LINKED_IMAGE"
 # Setup ArUco
 dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
 parameters = cv2.aruco.DetectorParameters()
-parameters.minMarkerPerimeterRate = 0.005
-parameters.maxMarkerPerimeterRate = 4.0
-parameters.polygonalApproxAccuracyRate = 0.05
+parameters.minMarkerPerimeterRate = config["aruco_parameters"]["minMarkerPerimeterRate"]
+parameters.maxMarkerPerimeterRate = config["aruco_parameters"]["maxMarkerPerimeterRate"]
+parameters.polygonalApproxAccuracyRate = config["aruco_parameters"]["polygonalApproxAccuracyRate"]
 detector = cv2.aruco.ArucoDetector(dictionary, parameters)
 
 # Setup Camera & OpenCV
-cap = cv2.VideoCapture(0)
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920) 
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+cap = cv2.VideoCapture(config["camera"]["capture_source"])
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, config["camera"]["resolution_width"]) 
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, config["camera"]["resolution_height"])
 clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
 
 # State Variables
@@ -149,8 +159,10 @@ try:
             cv2.aruco.drawDetectedMarkers(frame, corners, ids)
 
         # Show windows (Comment these out before actual flight!)
-        cv2.imshow('Real Camera View', frame)
-        cv2.imshow('What OpenCV Processes', enhanced_gray)
+        if config["live_feed"]["show_real_feed"]:
+            cv2.imshow('Real Camera View', frame)
+        if config["live_feed"]["show_processed_feed"]:
+            cv2.imshow('What OpenCV Processes', enhanced_gray)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             print("Quitting sequence initiated...")
