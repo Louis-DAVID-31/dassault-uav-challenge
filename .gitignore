@@ -1,3 +1,4 @@
 .vscode/
 logs/
 verified_markers/
+__pycache__

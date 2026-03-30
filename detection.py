@@ -4,6 +4,7 @@ import os
 import time
 from datetime import datetime
 import json
+from log import Log, Event
 
 # ==========================================
 # 1. CONFIGURATION (Edit these before flight)
@@ -18,7 +19,6 @@ except FileNotFoundError:
     exit(1)
 
 SAVE_FOLDER = config["folders"]["save_folder"]
-LOG_FOLDER = config["folders"]["log_folder"]
 TARGET_IDS = set(config["algorithm"]["target_ids"])  # Whitelist: Only look for these IDs
 MIN_DETECTIONS = config["algorithm"]["min_detections"]           # Must be seen this many times...
 FRAME_WINDOW = config["algorithm"]["frame_window"]
@@ -26,27 +26,11 @@ FRAME_WINDOW = config["algorithm"]["frame_window"]
 # ==========================================
 # 2. SETUP & LOG FILE INITIALIZATION
 # ==========================================
+log = Log(config["folders"]["log_folder"])
+
 os.makedirs(SAVE_FOLDER, exist_ok=True)
-os.makedirs(LOG_FOLDER, exist_ok=True)
 
-# Generate a unique log filename based on the current date and time
-timestamp_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-LOG_FILE = f"{LOG_FOLDER}/flight_log_{timestamp_str}.txt"
-
-def write_log(message):
-    """Helper function to append a line to the text file instantly."""
-    with open(LOG_FILE, "a") as f:
-        f.write(message + "\n")
-
-# Write the Mission Header
-write_log("========================================")
-write_log("UAV VISION MISSION LOG")
-write_log(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-write_log("Camera Resolution: 1920x1080 (Requested)")
-write_log(f"Target Whitelist: {list(TARGET_IDS)}")
-write_log(f"Sliding Window: {MIN_DETECTIONS} detections within {FRAME_WINDOW} frames")
-write_log("========================================")
-write_log("TIME, FRAME, ID, EVENT, CONFIDENCE, CENTER_XY, CORNERS, LINKED_IMAGE")
+log.mission_header(TARGET_IDS, MIN_DETECTIONS, FRAME_WINDOW)
 
 # Setup ArUco
 dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
@@ -68,7 +52,7 @@ detection_history = {}  # Format: {marker_id: [frame1, frame2, ...]}
 global_frame_count = 0
 start_time = time.time()
 
-print(f"Starting UAV Vision System. Logging to '{LOG_FILE}'...")
+print(f"Starting UAV Vision System. Logging to '{log.log_file}'...")
 print("Press 'q' in any video window to quit, or Ctrl+C in terminal.")
 
 # ==========================================
@@ -92,7 +76,7 @@ try:
         expired_ids = []
         for m_id, frames in detection_history.items():
             if (global_frame_count - frames[-1]) > FRAME_WINDOW:
-                write_log(f"{current_time}, {global_frame_count}, {m_id}, DROPPED_TIMEOUT, {len(frames)}/{MIN_DETECTIONS}, NA, NA, NONE")
+                log.log_detection(Event.DROPPED_TIMEOUT,current_time, global_frame_count,m_id,f"{len(frames)/MIN_DETECTIONS:.2f}")
                 expired_ids.append(m_id)
         
         # Delete expired memory
@@ -116,12 +100,12 @@ try:
 
                 # 1. Is it a False Positive? (REJECTED_NON_WHITELIST)
                 if marker_id not in TARGET_IDS:
-                    write_log(f"{current_time}, {global_frame_count}, {marker_id}, REJECTED_NON_WHITELIST, NA, {center_str}, {corners_str}, NONE")
+                    log.log_detection(Event.REJECTED_NON_WHITELIST,current_time, global_frame_count,marker_id,center_str=center_str, corners_str=corners_str)
                     continue 
                 
                 # 2. Have we already saved it? (IGNORED_DUPLICATE)
                 if marker_id in seen_markers:
-                    write_log(f"{current_time}, {global_frame_count}, {marker_id}, IGNORED_DUPLICATE, NA, {center_str}, {corners_str}, NONE")
+                    log.log_detection(Event.IGNORED_DUPLICATE,current_time, global_frame_count,marker_id,center_str=center_str, corners_str=corners_str)
                     continue
 
                 # 3. Active Target Processing (SPOTTED)
@@ -146,14 +130,13 @@ try:
                     cv2.imwrite(filepath, save_frame)
                     
                     # Log Verification
-                    write_log(f"{current_time}, {global_frame_count}, {marker_id}, VERIFIED, {confidence}/{MIN_DETECTIONS}, {center_str}, {corners_str}, {filename}")
-                    
+                    log.log_detection(Event.VERIFIED,current_time, global_frame_count,marker_id,f"{confidence/MIN_DETECTIONS:.2f}",center_str, corners_str, filename)                    
                     seen_markers.add(marker_id)
                     del detection_history[marker_id] # Clear it out since it's verified
                 
                 # If it hasn't hit the threshold yet, just log that we spotted it
                 else:
-                    write_log(f"{current_time}, {global_frame_count}, {marker_id}, SPOTTED, {confidence}/{MIN_DETECTIONS}, {center_str}, {corners_str}, NONE")
+                    log.log_detection(Event.SPOTTED,current_time, global_frame_count,marker_id,f"{confidence/MIN_DETECTIONS:.2f}",center_str, corners_str)
 
             # Draw over the live feed
             cv2.aruco.drawDetectedMarkers(frame, corners, ids)
@@ -180,14 +163,8 @@ finally:
     # Prevent divide by zero error if quit instantly
     avg_fps = global_frame_count / total_time if total_time > 0 else 0 
 
-    write_log("========================================")
-    write_log("MISSION SUMMARY")
-    write_log(f"End Time: {datetime.now().strftime('%H:%M:%S.%f')[:-3]}")
-    write_log(f"Total Frames: {global_frame_count}")
-    write_log(f"Average FPS: {avg_fps:.2f}")
-    write_log(f"Successfully Verified Targets: {list(seen_markers)}")
-    write_log("========================================")
+    log.mission_footer(global_frame_count, avg_fps, seen_markers)
 
     cap.release()
     cv2.destroyAllWindows()
-    print(f"Mission shutdown complete. Log saved successfully to: {LOG_FILE}")
+    print(f"Mission shutdown complete. Log saved successfully to: {log.log_file}")
