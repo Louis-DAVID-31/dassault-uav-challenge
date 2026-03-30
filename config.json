@@ -19,11 +19,15 @@
     "camera": {
         "capture_source": 0,
         "resolution_width": 1920,
-        "resolution_height": 1080
+        "resolution_height": 1080,
+        "matrix": [[1.0, 0.0, 1.0],
+                   [0.0, 1.0, 1.0],
+                   [0.0, 0.0, 1.0]],
+        "distortion_coeffs": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
     },
 
     "live_feed": {
         "show_real_feed": true,
-        "show_processed_feed" : false
+        "show_processed_feed" : true
     }
 }
