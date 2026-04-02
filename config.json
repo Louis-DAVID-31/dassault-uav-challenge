@@ -1,33 +1,43 @@
 {
-    "folders" : {
-        "save_folder": "verified_markers",
-        "log_folder": "logs"
+    "mission_control": {
+        "run_mode": "ground_test",
+        "show_real_live_video": true,
+        "show_processed_live_video" : true,
+        "print_terminal_debug": true
     },
 
-    "algorithm": {
-        "target_ids": [0,1,2,3,4],
-        "min_detections": 4,
-        "frame_window": 15
-    },
-
-    "aruco_parameters": {
-        "minMarkerPerimeterRate": 0.005,
-        "maxMarkerPerimeterRate": 4.0,
-        "polygonalApproxAccuracyRate": 0.05
-    },
-
-    "camera": {
+    "camera_hardware":{
         "capture_source": 0,
         "resolution_width": 1920,
         "resolution_height": 1080,
-        "matrix": [[1.0, 0.0, 1.0],
-                   [0.0, 1.0, 1.0],
-                   [0.0, 0.0, 1.0]],
+        "camera_matrix": [
+            [1.0, 0.0, 1.0],
+            [0.0, 1.0, 1.0],
+            [0.0, 0.0, 1.0]
+        ],
         "distortion_coeffs": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
     },
 
-    "live_feed": {
-        "show_real_feed": true,
-        "show_processed_feed" : true
+    "detection_algorithm": {
+        "target_whitelist": [0,1,2,3,4],
+        "aruco_dictionary": "DICT_4X4_50",
+        "sliding_window_frames": 15,
+        "min_detections_required": 4,
+        "aruco_parameters": {
+            "min_marker_perimeter_rate": 0.005,
+            "max_marker_perimeter_rate": 4.0,
+            "polygonal_approx_accuracy_rate": 0.05
+        },
+        "image_enhancement": {
+            "use_clahe": true,
+            "clahe_clip_limit": 2.0
+        }
+    },
+
+    "logging_and_output":{
+        "log_directory": "logs/",
+        "image_save_directory": "verified_markers/",
+        "save_images_enabled": true,
+        "log_mistakes": true
     }
 }
