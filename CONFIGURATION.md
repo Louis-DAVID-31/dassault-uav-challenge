@@ -32,7 +32,8 @@ No not alter the JSON keys. Only modify the values based on your flight requirem
 
 ---
 
-* **`logging_and_output.log_directory`**: String. The folder path where the `.txt` flight logs are saved (e.g., `"logs/"`).
-* **`logging_and_output.image_save_directory`**: String. The folder path where target screenshots are saved (e.g., `"verified_markers/"`).
+* **`logging_and_output.outputs_directory`**: String. The top-level master folder where all runtime artifacts (flight logs and saved images) are routed. Setting this to `"outputs"` ensures the root repository stays clean during operations.
+* **`logging_and_output.log_directory`**: String. The sub-folder path inside the outputs directory where the `.txt` flight logs are saved (e.g., `"logs/"`).
+* **`logging_and_output.image_save_directory`**: String. The sub-folder path inside the outputs directory where target screenshots are saved (e.g., `"verified_markers/"`).
 * **`logging_and_output.save_images_enabled`**: Boolean. If `true`, saves a JPEG every time a target is verified. Set to `false` if SD card I/O speeds are bottlenecking the framerate.
 * **`logging_and_output.log_mistakes`**: Boolean. If `true`, records non-whitelisted and dropped targets in the text log for post-flight debugging.

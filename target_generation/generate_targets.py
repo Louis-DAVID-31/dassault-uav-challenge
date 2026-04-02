@@ -3,7 +3,7 @@ import numpy as np
 import os
 
 # --- CONFIGURATION ---
-OUTPUT_FOLDER = "codes"
+OUTPUT_FOLDER = "target_generation/output_pngs"
 NUM_MARKERS = 5
 
 # Dimensions A4 à 300 DPI (Standard impression haute qualité)
