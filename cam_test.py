@@ -1,28 +1,25 @@
+from picamera2 import Picamera2
 import cv2
 
-# 1. On force le backend V4L2
-cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
+# Initialisation
+picam2 = Picamera2()
+config = picam2.create_video_configuration(main={"size": (640, 480)})
+picam2.configure(config)
+picam2.start()
 
-# 2. On force le format d'encodage en MJPEG
-cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M','J','P','G'))
+print("Caméra en direct (Picamera2) ! Appuyez sur 'q' pour quitter.")
 
-# 3. On limite la résolution (très important pour éviter les timeout)
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-cap.set(cv2.CAP_PROP_FPS, 30)
-
-if not cap.isOpened():
-    print("Erreur d'ouverture")
-    exit()
-
-while True:
-    ret, frame = cap.read()
-    if not ret:
-        print("Échec de la lecture de l'image (timeout ou mauvais format)")
-        break
-    
-    cv2.imshow('Video', frame)
-    if cv2.waitKey(1) == ord('q'):
-        break
-
-cap.release()
+try:
+    while True:
+        # On récupère l'image directement au format OpenCV (tableau NumPy RGB/BGR)
+        frame = picam2.capture_array()
+        
+        cv2.imshow("Flux Picamera2", frame)
+        
+        if cv2.waitKey(1) == ord('q'):
+            break
+except Exception as e:
+    print(f"Une erreur est survenue : {e}")
+finally:
+    picam2.stop()
+    cv2.destroyAllWindows()
