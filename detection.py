@@ -161,7 +161,7 @@ try:
                     log.log_detection(Event.SPOTTED,current_time, global_frame_count,marker_id,f"{confidence/DETECTION["min_detections_required"]:.2f}",center_str, corners_str)
 
             # Draw over the live feed
-            cv2.aruco.drawDetectedMarkers(frame, corners, ids)
+            # cv2.aruco.drawDetectedMarkers(frame, corners, ids)
 
         # Show windows (Comment these out before actual flight!)
         if SHOW_REAL_LIVE_VIDEO:
