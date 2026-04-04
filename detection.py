@@ -38,27 +38,27 @@ DETECTION["target_whitelist"] = set(DETECTION["target_whitelist"])
 print("CONFIG LOADED")
 
 # ==========================================
-# 2. SETUP & LOG FILE INITIALIZATION
+# 2. SETUP
 # ==========================================
-log = Log(config["folders"]["log_folder"])
+log = Log(LOG_DIR)
 
-os.makedirs(SAVE_FOLDER, exist_ok=True)
+os.makedirs(IMG_DIR, exist_ok=True)
 
-log.mission_header(TARGET_IDS, MIN_DETECTIONS, FRAME_WINDOW)
+log.mission_header(DETECTION["target_whitelist"], DETECTION["min_detections_required"], DETECTION["sliding_window_frames"])
 
 # Setup ArUco
-dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+dictionary = cv2.aruco.getPredefinedDictionary(getattr(cv2.aruco, DETECTION["aruco_dictionary"]))
 parameters = cv2.aruco.DetectorParameters()
-parameters.minMarkerPerimeterRate = config["aruco_parameters"]["minMarkerPerimeterRate"]
-parameters.maxMarkerPerimeterRate = config["aruco_parameters"]["maxMarkerPerimeterRate"]
-parameters.polygonalApproxAccuracyRate = config["aruco_parameters"]["polygonalApproxAccuracyRate"]
+parameters.minMarkerPerimeterRate = DETECTION["aruco_parameters"]["min_marker_perimeter_rate"]
+parameters.maxMarkerPerimeterRate = DETECTION["aruco_parameters"]["max_marker_perimeter_rate"]
+parameters.polygonalApproxAccuracyRate = DETECTION["aruco_parameters"]["polygonal_approx_accuracy_rate"]
 detector = cv2.aruco.ArucoDetector(dictionary, parameters)
 
 # Setup Camera & OpenCV
-cap = cv2.VideoCapture(config["camera"]["capture_source"])
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, config["camera"]["resolution_width"]) 
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, config["camera"]["resolution_height"])
-clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+cap = cv2.VideoCapture(CAMERA["capture_source"])
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA["resolution_width"]) 
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA["resolution_height"])
+clahe = cv2.createCLAHE(clipLimit=DETECTION["image_enhancement"]["clahe_clip_limit"], tileGridSize=(8,8))
 
 # State Variables
 seen_markers = set()
@@ -66,7 +66,8 @@ detection_history = {}  # Format: {marker_id: [frame1, frame2, ...]}
 global_frame_count = 0
 start_time = time.time()
 
-print(f"Starting UAV Vision System. Logging to '{log.log_file}'...")
+print(f"STARTING VISION SYSTEM")
+print(f"LOGGING to: '{log.log_file}'")
 print("Press 'q' in any video window to quit, or Ctrl+C in terminal.")
 
 # ==========================================
@@ -76,7 +77,7 @@ try:
     while True:
         ret, frame = cap.read()
         if not ret:
-            print("Error: Could not read frame from camera.")
+            print("ERROR: Could not read frame from camera.")
             break
         
         global_frame_count += 1
@@ -89,8 +90,8 @@ try:
         # Look at our history. If an active marker hasn't been seen recently, log the drop.
         expired_ids = []
         for m_id, frames in detection_history.items():
-            if (global_frame_count - frames[-1]) > FRAME_WINDOW:
-                log.log_detection(Event.DROPPED_TIMEOUT,current_time, global_frame_count,m_id,f"{len(frames)/MIN_DETECTIONS:.2f}")
+            if (global_frame_count - frames[-1]) > DETECTION["sliding_window_frames"]:
+                log.log_detection(Event.DROPPED_TIMEOUT,current_time, global_frame_count,m_id,f"{len(frames)/DETECTION["min_detections_required"]:.2f}")
                 expired_ids.append(m_id)
         
         # Delete expired memory
@@ -113,7 +114,7 @@ try:
                 corners_str = f"[[{int(c[0][0])},{int(c[0][1])}],[{int(c[1][0])},{int(c[1][1])}],[{int(c[2][0])},{int(c[2][1])}],[{int(c[3][0])},{int(c[3][1])}]]"
 
                 # 1. Is it a False Positive? (REJECTED_NON_WHITELIST)
-                if marker_id not in TARGET_IDS:
+                if marker_id not in DETECTION["target_whitelist"]:
                     log.log_detection(Event.REJECTED_NON_WHITELIST,current_time, global_frame_count,marker_id,center_str=center_str, corners_str=corners_str)
                     continue 
                 
@@ -129,36 +130,36 @@ try:
                 detection_history[marker_id].append(global_frame_count)
                 
                 # Purge old frames from memory array
-                detection_history[marker_id] = [f for f in detection_history[marker_id] if (global_frame_count - f) <= FRAME_WINDOW]
+                detection_history[marker_id] = [f for f in detection_history[marker_id] if (global_frame_count - f) <= DETECTION["sliding_window_frames"]]
                 confidence = len(detection_history[marker_id])
 
                 # 4. Did it hit the threshold? (VERIFIED)
-                if confidence >= MIN_DETECTIONS:
+                if confidence >= DETECTION["min_detections_required"]:
                     print(f"*** VERIFIED TARGET FOUND! ID: {marker_id} ***")
                     
                     # Save Screenshot
                     filename = f"target_{marker_id}_frame_{global_frame_count}.jpg"
-                    filepath = os.path.join(SAVE_FOLDER, filename)
+                    filepath = os.path.join(IMG_DIR, filename)
                     save_frame = frame.copy()
                     cv2.aruco.drawDetectedMarkers(save_frame, [corners[i]], np.array([[marker_id]]))
                     cv2.imwrite(filepath, save_frame)
                     
                     # Log Verification
-                    log.log_detection(Event.VERIFIED,current_time, global_frame_count,marker_id,f"{confidence/MIN_DETECTIONS:.2f}",center_str, corners_str, filename)                    
+                    log.log_detection(Event.VERIFIED,current_time, global_frame_count,marker_id,f"{confidence/DETECTION["min_detections_required"]:.2f}",center_str, corners_str, filename)                    
                     seen_markers.add(marker_id)
                     del detection_history[marker_id] # Clear it out since it's verified
                 
                 # If it hasn't hit the threshold yet, just log that we spotted it
                 else:
-                    log.log_detection(Event.SPOTTED,current_time, global_frame_count,marker_id,f"{confidence/MIN_DETECTIONS:.2f}",center_str, corners_str)
+                    log.log_detection(Event.SPOTTED,current_time, global_frame_count,marker_id,f"{confidence/DETECTION["min_detections_required"]:.2f}",center_str, corners_str)
 
             # Draw over the live feed
             cv2.aruco.drawDetectedMarkers(frame, corners, ids)
 
         # Show windows (Comment these out before actual flight!)
-        if config["live_feed"]["show_real_feed"]:
+        if SHOW_REAL_LIVE_VIDEO:
             cv2.imshow('Real Camera View', frame)
-        if config["live_feed"]["show_processed_feed"]:
+        if SHOW_PROCESSED_LIVE_VIDEO:
             cv2.imshow('What OpenCV Processes', enhanced_gray)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):

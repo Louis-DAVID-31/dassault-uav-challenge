@@ -12,7 +12,7 @@ class Event(Enum):
 class Log:
     def __init__(self, LOG_FOLDER):
         os.makedirs(LOG_FOLDER, exist_ok=True)
-        self.log_file = f"{LOG_FOLDER}/flight_log_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.txt"
+        self.log_file = f"{LOG_FOLDER}flight_log_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.txt"
 
     def write_log(self, message):
         with open(self.log_file, "a") as f:
