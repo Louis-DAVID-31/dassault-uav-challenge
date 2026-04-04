@@ -38,7 +38,7 @@
     },
 
     "logging_and_output":{
-        "outputs_directory": "outputs",
+        "outputs_directory": "outputs/",
         "log_directory": "logs/",
         "image_save_directory": "verified_markers/",
         "save_images_enabled": true,

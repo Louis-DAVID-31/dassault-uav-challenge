@@ -7,21 +7,35 @@ import json
 from log import Log, Event
 
 # ==========================================
-# 1. CONFIGURATION (Edit these before flight)
+# 1. CONFIGURATION
 # ==========================================
 
-print("Loading configuration from config.json...")
 try:
     with open('config.json', 'r') as config_file:
         config = json.load(config_file)
 except FileNotFoundError:
-    print("CRITICAL ERROR: config.json not found! Cannot start vision system.")
+    print("CRITICAL ERROR: config.json not found")
     exit(1)
 
-SAVE_FOLDER = config["folders"]["save_folder"]
-TARGET_IDS = set(config["algorithm"]["target_ids"])  # Whitelist: Only look for these IDs
-MIN_DETECTIONS = config["algorithm"]["min_detections"]           # Must be seen this many times...
-FRAME_WINDOW = config["algorithm"]["frame_window"]
+RUN_MODE = config["mission_control"]["run_mode"]
+SHOW_REAL_LIVE_VIDEO = config["mission_control"]["show_real_live_video"]
+SHOW_PROCESSED_LIVE_VIDEO = config["mission_control"]["show_processed_live_video"]
+PRINT_TERMINAL_DEBUG = config["mission_control"]["print_terminal_debug"]
+
+SAVE_IMAGES_ENABLED = config["logging_and_output"]["save_images_enabled"]
+LOG_MISTAKES = config["logging_and_output"]["log_mistakes"]
+LOG_DIR = os.path.join(config["logging_and_output"]["outputs_directory"], config["logging_and_output"]["log_directory"])
+IMG_DIR = os.path.join(config["logging_and_output"]["outputs_directory"], config["logging_and_output"]["image_save_directory"])
+
+CAMERA = config["camera_hardware"]
+CAMERA["distortion_coeffs"] = np.array(CAMERA["distortion_coeffs"], dtype=np.float64)
+CAMERA["camera_matrix"] = np.array(CAMERA["camera_matrix"], dtype=np.float64)
+
+
+DETECTION = config["detection_algorithm"]
+DETECTION["target_whitelist"] = set(DETECTION["target_whitelist"])
+
+print("CONFIG LOADED")
 
 # ==========================================
 # 2. SETUP & LOG FILE INITIALIZATION
