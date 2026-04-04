@@ -83,6 +83,7 @@ print("Press 'q' in any video window to quit, or Ctrl+C in terminal.")
 try:
     while True:
         frame = picam2.capture_array()
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGR2BGR)
         #if not ret:
         #    print("ERROR: Could not read frame from camera.")
         #    break
