@@ -82,10 +82,10 @@ print("Press 'q' in any video window to quit, or Ctrl+C in terminal.")
 # ==========================================
 try:
     while True:
-        ret, frame = picam2.capture_array()
-        if not ret:
-            print("ERROR: Could not read frame from camera.")
-            break
+        frame = picam2.capture_array()
+        #if not ret:
+        #    print("ERROR: Could not read frame from camera.")
+        #    break
         
         global_frame_count += 1
         current_time = datetime.now().strftime("%H:%M:%S.%f")[:-3]
@@ -187,6 +187,6 @@ finally:
 
     log.mission_footer(global_frame_count, avg_fps, seen_markers)
 
-    cap.release()
+    #cap.release()
     cv2.destroyAllWindows()
     print(f"Mission shutdown complete. Log saved successfully to: {log.log_file}")
