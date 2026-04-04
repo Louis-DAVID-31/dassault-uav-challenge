@@ -55,7 +55,7 @@ parameters.polygonalApproxAccuracyRate = DETECTION["aruco_parameters"]["polygona
 detector = cv2.aruco.ArucoDetector(dictionary, parameters)
 
 # Setup Camera & OpenCV
-cap = cv2.VideoCapture(CAMERA["capture_source"], cv2.CAP_V4L2)
+cap = cv2.VideoCapture(CAMERA["capture_source"], cv2.CAP_GSTREAMER)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA["resolution_width"]) 
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA["resolution_height"])
 clahe = cv2.createCLAHE(clipLimit=DETECTION["image_enhancement"]["clahe_clip_limit"], tileGridSize=(8,8))

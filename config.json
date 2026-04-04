@@ -7,7 +7,7 @@
     },
 
     "camera_hardware":{
-        "capture_source": 1,
+        "capture_source": 0,
         "resolution_width": 640,
         "resolution_height": 480,
         "camera_matrix": [
