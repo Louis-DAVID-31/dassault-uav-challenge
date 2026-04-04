@@ -54,22 +54,8 @@ parameters.maxMarkerPerimeterRate = DETECTION["aruco_parameters"]["max_marker_pe
 parameters.polygonalApproxAccuracyRate = DETECTION["aruco_parameters"]["polygonal_approx_accuracy_rate"]
 detector = cv2.aruco.ArucoDetector(dictionary, parameters)
 
-# Setup Camera & OpenCV CAMERA["capture_source"]
-
-gst_str = (
-   "libcamerasrc ! "
-   "video/x-raw, width=640, height=480, framerate=30/1 ! "
-   "videoconvert ! "
-   "appsink"
-)
-
-cap = cv2.VideoCapture(gst_str, cv2.CAP_GSTREAMER)
-
-if not cap.isOpened():
-   print("FATAL: Could not open camera via GStreamer.")
-   # Fallback to index 0 with V4L2 backend just in case
-   cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
-
+# Setup Camera & OpenCV
+cap = cv2.VideoCapture(CAMERA["capture_source"])
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA["resolution_width"]) 
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA["resolution_height"])
 clahe = cv2.createCLAHE(clipLimit=DETECTION["image_enhancement"]["clahe_clip_limit"], tileGridSize=(8,8))

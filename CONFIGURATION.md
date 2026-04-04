@@ -5,7 +5,7 @@ No not alter the JSON keys. Only modify the values based on your flight requirem
 
 ---
 
-* **`mission_control.run_mode`**: String. Defines the execution state. Set to `"flight"` for actual operations (disables hazardous pop-ups), `"ground_test"` for bench testing, or `"simulation"` to mock telemetry data.
+* **`mission_control.run_mode`**: String. Defines the execution state. Set to `"flight"` for actual operations (disables hazardous pop-ups), `"ground_test"` for bench testing, `"simulation"` to mock telemetry data, or `"development"` for development of the algorithm.
 * **`mission_control.show_real_live_video`**: Boolean (`true`/`false`). If `true`, opens an OpenCV window displaying the camera feed. **Must be `false` during flight** to prevent the Raspberry Pi from crashing when no monitor is attached.
 * **`mission_control.show_processed_live_video`**: Boolean (`true`/`false`). If `true`, opens an OpenCV window displaying the algorithm-processed camera feed. **Must be `false` during flight** to prevent the Raspberry Pi from crashing when no monitor is attached.
 * **`mission_control.print_terminal_debug`**: Boolean. If `true`, floods the terminal with every spotted target and logic step. Set to `false` in flight to save CPU cycles.
