@@ -17,6 +17,9 @@ No not alter the JSON keys. Only modify the values based on your flight requirem
 * **`camera_hardware.resolution_height`**: Integer. The requested pixel height of the camera feed (e.g., `1080`).
 * **`camera_hardware.camera_matrix`**: 3x3 Array of Floats. The intrinsic lens calibration matrix ($K$). Calculate this using OpenCV's checkerboard calibration. Do not use datasheet estimates.
 * **`camera_hardware.distortion_coeffs`**: Array of Floats (5 values). The lens distortion coefficients ($k_1, k_2, p_1, p_2, k_3$) generated alongside the camera matrix.
+* **`camera_hardware.offset_gps_forward_m`**: Float. The physical distance in meters from the camera lens to the GPS/altimeter along the X-axis. A positive value means the GPS is physically *forward* (closer to the nose) of the camera.
+* **`camera_hardware.offset_gps_right_m`**: Float. The physical distance in meters from the camera lens to the GPS/altimeter along the Y-axis. A positive value means the GPS is physically to the *right* of the camera.
+* **`camera_hardware.offset_gps_down_m`**: Float. The physical distance in meters from the camera lens to the GPS/altimeter along the Z-axis. A positive value means the GPS is physically *below* the camera (closer to the belly/ground).
 
 ---
 
