@@ -5,6 +5,7 @@ import time
 from datetime import datetime
 import json
 from log import Log, Event
+from picamera2 import Picamera2
 
 # ==========================================
 # 1. CONFIGURATION
@@ -66,6 +67,12 @@ detection_history = {}  # Format: {marker_id: [frame1, frame2, ...]}
 global_frame_count = 0
 start_time = time.time()
 
+# Initialisation
+picam2 = Picamera2()
+configuration = picam2.create_video_configuration(main={"size": (640, 480)})
+picam2.configure(configuration)
+picam2.start()
+
 print(f"STARTING VISION SYSTEM")
 print(f"LOGGING to: '{log.log_file}'")
 print("Press 'q' in any video window to quit, or Ctrl+C in terminal.")
@@ -75,7 +82,7 @@ print("Press 'q' in any video window to quit, or Ctrl+C in terminal.")
 # ==========================================
 try:
     while True:
-        ret, frame = cap.read()
+        ret, frame = picam2.capture_array()
         if not ret:
             print("ERROR: Could not read frame from camera.")
             break
