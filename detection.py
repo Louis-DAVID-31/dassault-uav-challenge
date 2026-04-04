@@ -148,7 +148,7 @@ try:
                     filename = f"target_{marker_id}_frame_{global_frame_count}.jpg"
                     filepath = os.path.join(IMG_DIR, filename)
                     save_frame = frame.copy()
-                    cv2.aruco.drawDetectedMarkers(save_frame, [corners[i]], np.array([[marker_id]]))
+                    #cv2.aruco.drawDetectedMarkers(save_frame, [corners[i]], np.array([[marker_id]]))
                     cv2.imwrite(filepath, save_frame)
                     
                     # Log Verification
