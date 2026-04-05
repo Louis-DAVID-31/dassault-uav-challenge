@@ -1,0 +1,2 @@
+class MavlinkSender :
+    pass

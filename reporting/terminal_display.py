@@ -1,0 +1,2 @@
+class TerminalDisplay :
+    pass

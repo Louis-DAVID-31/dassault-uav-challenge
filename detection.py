@@ -4,7 +4,7 @@ import os
 import time
 from datetime import datetime
 import json
-from log import Log, Event
+from reporting.log import Log, Event
 from picamera2 import Picamera2
 
 # ==========================================
