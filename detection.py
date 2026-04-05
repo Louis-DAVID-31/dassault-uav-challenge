@@ -187,6 +187,7 @@ finally:
     avg_fps = global_frame_count / total_time if total_time > 0 else 0 
 
     log.mission_footer(global_frame_count, avg_fps, seen_markers)
+    log.clean_log()
 
     #cap.release()
     cv2.destroyAllWindows()
