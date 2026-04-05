@@ -1,10 +1,15 @@
+import os
 import cv2
 import numpy as np
 
 # Prepare your calibration images
 chessboard_size = (7, 6)
-nb_images = 10 
-calibration_images = [f"images/{i}.png" for i in range(nb_images)]  # Your images
+nb_images = 12 
+
+# Récupère le dossier où se trouve ton script calibration.py
+base_path = os.path.dirname(os.path.abspath(__file__))
+# Reconstruit le chemin vers tes images
+calibration_images = [os.path.join(base_path, "images", f"{i}.jpg") for i in range(nb_images)]
 
 # Arrays to store object points and image points
 objpoints = []

@@ -11,11 +11,11 @@
         "resolution_width": 1920,
         "resolution_height": 1080,
         "camera_matrix": [
-            [1.0, 0.0, 1.0],
-            [0.0, 1.0, 1.0],
+            [1.28720518e+03, 0.0, 2.89847984e+02],
+            [0.0, 1.29164843e+03, 3.34968971e+02],
             [0.0, 0.0, 1.0]
         ],
-        "distortion_coeffs": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+        "distortion_coeffs": [-2.10580199e-01, 6.21571346e+00, 1.53852419e-02, -9.00164461e-03, -4.78383013e+01],
         "offset_gps_forward_m": 0,
         "offset_gps_right_m": 0,
         "offset_gps_down_m": 0
