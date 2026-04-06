@@ -76,12 +76,10 @@ def detection(EXECUTION_CONFIG: ExecutionConfig,
 
     # State & Program Variables
     global_frame_count = 0
-    rolling_frame_time = time.time()
+    #rolling_frame_time = time.time()
     
     verified_marker = None
     detection_history = {} 
-    
-    start_time = time.time()
 
     # Camera Initialisation
     picam = Picamera2()
@@ -98,8 +96,8 @@ def detection(EXECUTION_CONFIG: ExecutionConfig,
             
             # Variables update & FPS
             frame_time = time.time()
-            instantaneous_fps = 1.0/max(frame_time-rolling_frame_time, 1e-5)
-            rolling_frame_time = frame_time
+            # instantaneous_fps = 1.0/max(frame_time-rolling_frame_time, 1e-5)
+            # rolling_frame_time = frame_time
             global_frame_count += 1
 
             # Initialisation
