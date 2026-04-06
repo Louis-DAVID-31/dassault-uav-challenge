@@ -8,8 +8,8 @@
 
     "camera_hardware":{
         "capture_source": 0,
-        "resolution_width": 1920,
-        "resolution_height": 1080,
+        "resolution_width": 640,
+        "resolution_height": 480,
         "camera_matrix": [
             [1.28720518e+03, 0.0, 2.89847984e+02],
             [0.0, 1.29164843e+03, 3.34968971e+02],
