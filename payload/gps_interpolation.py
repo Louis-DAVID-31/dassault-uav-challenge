@@ -106,3 +106,17 @@ def interpolate_gps_location(pixel_x, pixel_y,
     target_lon = uav_long + math.degrees(lon_offset_rad)
     
     return target_lat, target_lon
+
+def calculate_distance_meters(lat1, lon1, lat2, lon2):
+    """Calculates distance between two GPS points in meters using Haversine."""
+    R = 6378137.0 # Earth radius in meters
+    
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    
+    a = (math.sin(dlat / 2) * math.sin(dlat / 2) +
+         math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) *
+         math.sin(dlon / 2) * math.sin(dlon / 2))
+    
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return R * c
