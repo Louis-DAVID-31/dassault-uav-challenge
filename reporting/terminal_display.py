@@ -1,4 +1,4 @@
-from config_manager import ExecutionConfig
+from core.config_manager import ExecutionConfig
 
 class TerminalDisplay :
     

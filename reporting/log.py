@@ -1,6 +1,7 @@
 from datetime import datetime
 from enum import Enum, auto
 import os
+from core.config_manager import OutputConfig
 
 class Event(Enum):
     DROPPED_TIMEOUT = auto()
@@ -10,21 +11,25 @@ class Event(Enum):
     SPOTTED = auto()
 
 class Log:
-    def __init__(self, LOG_FOLDER):
-        os.makedirs(LOG_FOLDER, exist_ok=True)
-        self.log_file = f"{LOG_FOLDER}flight_log_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.txt"
+    def __init__(self, OUTPUT_CONFIG: OutputConfig):
+        os.makedirs(OUTPUT_CONFIG.log_dir, exist_ok=True)
+        self.log_file = f"{OUTPUT_CONFIG.log_dir}log_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.txt"
+        self.log_mistakes_enabled = OUTPUT_CONFIG.log_mistakes
 
     def write_log(self, message):
         with open(self.log_file, "a") as f:
             f.write(message + "\n")
+    
+    def write_separation(self):
+        self.write_log("========================================")
+
+    def start_detection(self):
+        pass
 
     def mission_header(self, target_ids, min_detection, frame_window):
         self.write_log("========================================")
-        self.write_log("UAV VISION MISSION LOG")
+        self.write_log("UAV MISSION LOG")
         self.write_log(f"Date: {datetime.now().strftime('%H:%M:%S.%f')[:-3]}")
-        self.write_log("Camera Resolution: 1920x1080 (Requested)")
-        self.write_log(f"Target Whitelist: {list(target_ids)}")
-        self.write_log(f"Sliding Window: {min_detection} detections within {frame_window} frames")
         self.write_log("========================================")
         self.write_log("TIME, FRAME, ID, EVENT, CONFIDENCE, CENTER_XY, CORNERS, LINKED_IMAGE")
 
