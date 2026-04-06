@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 import json
 from reporting.log import Log, Event
-from picamera2 import Picamera2
+from picamera2 import Picamera2  # type: ignore
 
 # ==========================================
 # 1. CONFIGURATION

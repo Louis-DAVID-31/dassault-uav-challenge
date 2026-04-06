@@ -1,4 +1,4 @@
-from picamera2 import Picamera2
+from picamera2 import Picamera2  # type: ignore
 import cv2
 
 # Initialisation
