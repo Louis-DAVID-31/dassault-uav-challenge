@@ -25,8 +25,13 @@ class Camera:
 class Detection:
     whitelist: list
     aruco_dict: str
-    sliding_window: int 
-    min_detection: int 
+
+    verif_sliding_window: int 
+    verif_min_detection: int
+    track_max_dist_pix : float 
+    track_max_dist_m : float
+    stop_window: int
+    
     aruco_param_min_marker_perimeter_rate: float
     aruco_param_max_marker_perimeter_rate: float
     aruco_param_polygonal_approx_accuracy_rate: float 
@@ -70,8 +75,11 @@ def load_config(path: str):
     DETECTION = Detection(
         whitelist = set(config["detection_algorithm"]["target_whitelist"]),
         aruco_dict = config["detection_algorithm"]["aruco_dictionary"],
-        sliding_window = config["detection_algorithm"]["sliding_window_frames"],
-        min_detection = config["detection_algorithm"]["min_detections_required"],
+        verif_sliding_window = config["detection_algorithm"]["verification_sliding_window_frames"],
+        verif_min_detection = config["detection_algorithm"]["verification_min_detections_required"],
+        stop_window = config["detection_algorithm"]["stopping_window_frames"],
+        track_max_dist_pix = config["detection_algorithm"]["tracking_max_distance_pixel"],
+        track_max_dist_m = config["detection_algorithm"]["tracking_max_distance_m"],
         aruco_param_min_marker_perimeter_rate = config["detection_algorithm"]["aruco_parameters"]["min_marker_perimeter_rate"],
         aruco_param_max_marker_perimeter_rate = config["detection_algorithm"]["aruco_parameters"]["max_marker_perimeter_rate"],
         aruco_param_polygonal_approx_accuracy_rate = config["detection_algorithm"]["aruco_parameters"]["polygonal_approx_accuracy_rate"],

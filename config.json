@@ -24,8 +24,11 @@
     "detection_algorithm": {
         "target_whitelist": [0,1,2,3,4],
         "aruco_dictionary": "DICT_4X4_50",
-        "sliding_window_frames": 15,
-        "min_detections_required": 4,
+        "verification_sliding_window_frames": 15,
+        "verification_min_detections_required": 4,
+        "tracking_max_distance_pixel": 30,
+        "tracking_max_distance_m": 15,
+        "stopping_window_frames": 10,
         "aruco_parameters": {
             "min_marker_perimeter_rate": 0.005,
             "max_marker_perimeter_rate": 4.0,
