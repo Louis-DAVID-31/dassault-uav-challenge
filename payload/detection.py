@@ -26,20 +26,20 @@ class VerifiedMarker:
         self.id = ID
         self.last_seen = seen_frame
         self.last_marker = last_marker
-        self.long_list = []
         self.lat_list = []
+        self.long_list = []
 
     def is_correct_id(self, marker: Marker):
         return self.id == marker.id
     
-    def add_coordinates(self, long, lat):
-        self.long_list.append(long)
+    def add_coordinates(self, lat, long):
         self.lat_list.append(lat)
+        self.long_list.append(long)
     
     def get_final_coordinates(self):
         if not self.long_list :
             return None, None
-        return np.mean(self.long_list), np.mean(self.lat_list)
+        return np.mean(self.lat_list), np.mean(self.long_list)
 
     def see_marker(self, frame, marker):
         self.last_seen = frame
