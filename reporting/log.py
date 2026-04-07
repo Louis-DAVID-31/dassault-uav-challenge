@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum, auto
 import os
-from core.config_manager import OutputConfig, ExecutionConfig
+from core.config_manager import OutputConfig, ExecutionConfig, Detection, Camera
 
 class Detection_Event(Enum):
     REJECTED_NON_WHITELIST = auto()
@@ -64,23 +64,28 @@ class Log:
             self.write(f"Date: {self.creation_time}", FILE)
             self.write_separation(FILE)
 
+    def detection_header(self, start_time, DETECTION: Detection, CAMERA: Camera):
+        self.write_separation(LogFile.DETECTION)
+        self.write_detection(f"DETECTION Start Time: {start_time}")
+        self.write_detection(f"Camera Resolution: {CAMERA.res_width}x{CAMERA.res_height}")
+        self.write_detection(f"Marker Processing Parameters: {DETECTION.verif_sliding_window},{DETECTION.verif_min_detection}, {DETECTION.track_max_dist_pix}, {DETECTION.track_max_dist_m}, {DETECTION.stop_window}")
+        self.write_detection(f"Detector Parameters: {DETECTION.aruco_param_min_marker_perimeter_rate}, {DETECTION.aruco_param_max_marker_perimeter_rate}, {DETECTION.aruco_param_polygonal_approx_accuracy_rate}, {DETECTION.use_clahe}, {DETECTION.clahe_clip_limit}")
+        self.write_separation(LogFile.DETECTION)
+        self.write_detection("TIME, FRAME, ID, EVENT, CONFIDENCE, CENTER_XY, CORNERS, LINKED_IMAGE")
 
+    def detection_new_marker(self, type: Detection_Event, current_time, global_frame_count, marker_id, confidence = "NA", center_str="NA", corners_str="NA", filename="NONE"):
+        if (type != Detection_Event.REJECTED_NON_WHITELIST) or (self.log_mistakes_enabled):
+            self.write_detection(f"{current_time}, {global_frame_count}, {marker_id}, {type.name}, {confidence}, {center_str}, {corners_str}, {filename}")
 
-
-    def mission_header(self, target_ids, min_detection, frame_window):
-        self.write_log("TIME, FRAME, ID, EVENT, CONFIDENCE, CENTER_XY, CORNERS, LINKED_IMAGE")
-
-    def mission_footer(self, global_frame_count, avg_fps, seen_markers):
-        self.write_log("========================================")
-        self.write_log("MISSION SUMMARY")
-        self.write_log(f"End Time: {datetime.now().strftime('%H:%M:%S.%f')[:-3]}")
-        self.write_log(f"Total Frames: {global_frame_count}")
-        self.write_log(f"Average FPS: {avg_fps:.2f}")
-        self.write_log(f"Successfully Verified Targets: {list(seen_markers)}")
-        self.write_log("========================================")
-
-    def log_detection(self, type, current_time, global_frame_count, marker_id, confidence = "NA", center_str="NA", corners_str="NA", filename="NONE"):
-        self.write_log(f"{current_time}, {global_frame_count}, {marker_id}, {type.name}, {confidence}, {center_str}, {corners_str}, {filename}")
+    def detection_footer(self, end_time, global_frame_count, avg_fps, id_target_found, nb_frames_with_target, lat_target, long_target):
+        self.write_separation(LogFile.DETECTION)
+        self.write_detection("DETECTION SUMMARY")
+        self.write_detection(f"DETECTION End Time: {end_time}")
+        self.write_detection(f"Total Frames: {global_frame_count}")
+        self.write_detection(f"Average FPS: {avg_fps:.2f}")
+        self.write_detection(f"ID Target Found: {id_target_found}")
+        self.write_detection(f"Frames With Target Count: {nb_frames_with_target}")
+        self.write_detection(f"Target Coordinates: {lat_target},{long_target}")
     
     def clean_detection(self):
         # Generate output filename (e.g., flight_log_clean.txt)
