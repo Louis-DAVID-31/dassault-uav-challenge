@@ -1,6 +1,6 @@
 {
     "mission_control": {
-        "run_mode": "development",
+        "run_mode": "dev",
         "show_real_live_video": true,
         "show_processed_live_video" : true,
         "print_terminal_debug": true
