@@ -95,34 +95,26 @@ class Log:
         # We keep SPOTTED and VERIFIED to see the progression of a real hit.
         valid_events = ["SPOTTED", "VERIFIED", "TRACKED"]
         cleaned_lines = []
-        print(f"Opening {self.detection_log_file} for cleaning...")
-        try:
-            with open(self.detection_log_file, 'r') as f:
-                for line in f:
-                    # 1. Always keep headers, footers, and the CSV column labels
-                    if line.startswith("=") or "TIME, FRAME, ID" in line or "Date:" in line or "Camera" in line:
-                        cleaned_lines.append(line)
-                        continue
-                    
-                    # 2. Check if the line contains a valid event
-                    # We split by comma to check the EVENT column (index 3)
-                    parts = line.split(',')
-                    if len(parts) > 3:
-                        event_type = parts[3].strip()
-                        if event_type in valid_events:
-                            cleaned_lines.append(line)
-                    
-                    # 3. Keep summary data at the end
-                    if any(x in line for x in ["End Time:", "Total Frames:", "Average FPS:", "Successfully"]):
-                        cleaned_lines.append(line)
+        equal_count = 0
+        
+        with open(self.detection_log_file, 'r') as f:
+            for line in f:
+                # 1. Always keep headers, footers, and the CSV column labels
+                if line.startswith("=") :
+                    equal_count += 1
 
-            # Write the filtered data to the new file
-            with open(output_file, 'w') as f:
-                f.writelines(cleaned_lines)
+                if equal_count != 3 or line.startswith("=") or "TIME, FRAME, ID":
+                    cleaned_lines.append(line)
+                    continue
                 
-            print(f"Success! Cleaned log saved to: {output_file}")
-            print(f"Original size: {os.path.getsize(self.detection_log_file)} bytes")
-            print(f"Cleaned size:  {os.path.getsize(output_file)} bytes")
+                # 2. Check if the line contains a valid event
+                # We split by comma to check the EVENT column (index 3)
+                parts = line.split(',')
+                if len(parts) > 3:
+                    event_type = parts[3].strip()
+                    if event_type in valid_events:
+                        cleaned_lines.append(line)
 
-        except FileNotFoundError:
-            print(f"Error: The file '{self.detection_log_file}' was not found.")
+        # Write the filtered data to the new file
+        with open(output_file, 'w') as f:
+            f.writelines(cleaned_lines)
