@@ -1,18 +1,20 @@
 import numpy as np
 import cv2
 import math
+from uav import UAVState
+from core import Camera
 
 def interpolate_gps_location(pixel_x, pixel_y,
-                             camera_matrix, dist_coeffs,
-                             uav_lat, uav_long, uav_alt,
-                             uav_roll, uav_pitch, uav_yaw,
-                             gimbal_pitch, gimbal_yaw):
+                             CAMERA: Camera,
+                             UAV_STATE: UAVState):
     
+    lat, lon, alt, roll, pitch, yaw, gimbal_pitch, gimbal_yaw = UAV_STATE.get_current_state()
+
     # ---------------------------------------------------------
     # 1. CAMERA FRAME: Convert 2D pixel to 3D Camera Ray
     # ---------------------------------------------------------
     point_2d = np.array([[[pixel_x, pixel_y]]], dtype=np.float32)
-    undistorted_pt = cv2.undistortPoints(point_2d, camera_matrix, dist_coeffs)[0][0]
+    undistorted_pt = cv2.undistortPoints(point_2d, CAMERA.matrix, CAMERA.dist_coeffs)[0][0]
     
     # Camera Frame: Z is out the lens, X is image right, Y is image down
     ray_cam = np.array([undistorted_pt[0], undistorted_pt[1], 1.0])
@@ -57,9 +59,9 @@ def interpolate_gps_location(pixel_x, pixel_y,
     # ---------------------------------------------------------
     # 4. EARTH NED FRAME: Apply UAV Attitude (Roll, Pitch, Yaw)
     # ---------------------------------------------------------
-    phi = math.radians(uav_roll)
-    theta = math.radians(uav_pitch)
-    psi = math.radians(uav_yaw)
+    phi = math.radians(roll)
+    theta = math.radians(pitch)
+    psi = math.radians(yaw)
     
     R_roll = np.array([
         [1, 0, 0],
@@ -90,7 +92,7 @@ def interpolate_gps_location(pixel_x, pixel_y,
         # The camera ray is pointing above the horizon. Cannot map to ground.
         return None, None 
         
-    scale = uav_alt / ray_ned[2]
+    scale = alt / ray_ned[2]
     dist_north = ray_ned[0] * scale
     dist_east = ray_ned[1] * scale
     
@@ -100,10 +102,10 @@ def interpolate_gps_location(pixel_x, pixel_y,
     EARTH_RADIUS = 6378137.0 # WGS84 equatorial radius in meters
     
     lat_offset_rad = dist_north / EARTH_RADIUS
-    lon_offset_rad = dist_east / (EARTH_RADIUS * math.cos(math.radians(uav_lat)))
+    lon_offset_rad = dist_east / (EARTH_RADIUS * math.cos(math.radians(lat)))
     
-    target_lat = uav_lat + math.degrees(lat_offset_rad)
-    target_lon = uav_long + math.degrees(lon_offset_rad)
+    target_lat = lat + math.degrees(lat_offset_rad)
+    target_lon = lon + math.degrees(lon_offset_rad)
     
     return target_lat, target_lon
 
