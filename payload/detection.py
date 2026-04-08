@@ -65,8 +65,9 @@ def detection(EXECUTION_CONFIG: ExecutionConfig,
     # ==========================================
 
     start_time = time.time()
+    start_datetime = datetime.now().strftime("%H:%M:%S.%f")[:-3]
     # Log Initialisation
-    LOG.detection_header(start_time, DETECTION, CAMERA)
+    LOG.detection_header(start_datetime, DETECTION, CAMERA)
 
     # ArUco Setup
     dict = cv2.aruco.getPredefinedDictionary(getattr(cv2.aruco, DETECTION.aruco_dict))
@@ -187,13 +188,14 @@ def detection(EXECUTION_CONFIG: ExecutionConfig,
         cv2.destroyAllWindows()
 
     end_time = time.time()
+    end_datetime = datetime.now().strftime("%H:%M:%S.%f")[:-3]
     avg_fps = global_frame_count/(end_time-start_time) if (end_time-start_time)>0 else 0
 
     lat, long = verified_marker.get_final_coordinates() if (verified_marker is not None) else None, None
     
     nb_frames_with_target = (DETECTION.verif_min_detection-1+len(verified_marker.long_list)) if (verified_marker is not None) else 0
 
-    LOG.detection_footer(end_time, global_frame_count, avg_fps, verified_marker.id, nb_frames_with_target, lat, long)
+    LOG.detection_footer(end_datetime, global_frame_count, avg_fps, verified_marker.id, nb_frames_with_target, lat, long)
 
     LOG.clean_detection()
 

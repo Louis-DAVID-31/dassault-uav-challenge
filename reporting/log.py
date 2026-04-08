@@ -72,9 +72,14 @@ class Log:
         self.write_separation(LogFile.DETECTION)
         self.write_detection("TIME, FRAME, ID, EVENT, CONFIDENCE, CENTER_XY, CORNERS, LINKED_IMAGE")
 
+        self.general_event(start_time, "DETECTION", "Starting Detection")
+
     def detection_new_marker(self, type: Detection_Event, current_time, global_frame_count, marker_id, confidence = "NA", center_str="NA", corners_str="NA", filename="NONE"):
         if (type != Detection_Event.REJECTED_NON_WHITELIST) or (self.log_mistakes_enabled):
             self.write_detection(f"{current_time}, {global_frame_count}, {marker_id}, {type.name}, {confidence}, {center_str}, {corners_str}, {filename}")
+        
+        if type == Detection_Event.VERIFIED :
+            self.general_event(current_time, "DETECTION", "Target Found")
 
     def detection_footer(self, end_time, global_frame_count, avg_fps, id_target_found, nb_frames_with_target, lat_target, long_target):
         self.write_separation(LogFile.DETECTION)
@@ -86,8 +91,11 @@ class Log:
         self.write_detection(f"Frames With Target Count: {nb_frames_with_target}")
         self.write_detection(f"Target Coordinates: {lat_target},{long_target}")
         self.write_separation(LogFile.DETECTION)
-    
+
+        self.general_event(end_time, "DETECTION", "Ending Detection")
+
     def clean_detection(self):
+
         # Generate output filename (e.g., flight_log_clean.txt)
         base, ext = os.path.splitext(self.detection_log_file)
         output_file = f"{base}_CLEANED{ext}" 
@@ -96,7 +104,7 @@ class Log:
         valid_events = ["SPOTTED", "VERIFIED", "TRACKED"]
         cleaned_lines = []
         equal_count = 0
-        
+
         with open(self.detection_log_file, 'r') as f:
             for line in f:
                 # 1. Always keep headers, footers, and the CSV column labels
@@ -118,3 +126,6 @@ class Log:
         # Write the filtered data to the new file
         with open(output_file, 'w') as f:
             f.writelines(cleaned_lines)
+
+    def general_event(self, time, type, msg):
+        self.write_general(f"{time}, {type}, {msg}")
