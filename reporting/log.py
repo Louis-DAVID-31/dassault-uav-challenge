@@ -1,4 +1,3 @@
-from datetime import datetime
 from enum import Enum, auto
 import os
 from core.config_manager import OutputConfig, ExecutionConfig, Detection, Camera
@@ -15,10 +14,10 @@ class LogFile(Enum):
     DETECTION = auto()
 
 class Log:
-    def __init__(self, EXECUTION_CONFIG: ExecutionConfig, OUTPUT_CONFIG: OutputConfig):
+    def __init__(self, mission_start_time, EXECUTION_CONFIG: ExecutionConfig, OUTPUT_CONFIG: OutputConfig):
 
-        self.creation_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        self.log_name = f"{EXECUTION_CONFIG.run_mode}_{self.creation_time}"
+        self.mission_start_time = mission_start_time
+        self.log_name = f"{EXECUTION_CONFIG.run_mode}_{self.mission_start_time}"
 
         self.log_folder = os.path.join(OUTPUT_CONFIG.log_dir,f"{self.log_name}/")
         os.makedirs(self.log_folder, exist_ok=True)
@@ -61,7 +60,7 @@ class Log:
             self.write("", FILE)
             self.write(f"Session: {self.log_name}", FILE)
             self.write(f"File: {FILE.name}", FILE)
-            self.write(f"Date: {self.creation_time}", FILE)
+            self.write(f"Date: {self.mission_start_time}", FILE)
             self.write_separation(FILE)
 
     def detection_header(self, start_time, DETECTION: Detection, CAMERA: Camera):
@@ -86,6 +85,7 @@ class Log:
         self.write_detection(f"ID Target Found: {id_target_found}")
         self.write_detection(f"Frames With Target Count: {nb_frames_with_target}")
         self.write_detection(f"Target Coordinates: {lat_target},{long_target}")
+        self.write_separation(LogFile.DETECTION)
     
     def clean_detection(self):
         # Generate output filename (e.g., flight_log_clean.txt)

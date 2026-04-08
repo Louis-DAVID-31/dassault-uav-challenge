@@ -2,12 +2,13 @@ import cv2
 import numpy as np
 import time
 import math
-from datetime import datetime
 from picamera2 import Picamera2   # type: ignore
 from core import ExecutionConfig, Camera, Detection, OutputConfig
+from reporting import Log, Detection_Event
+from datetime import datetime
 
 class Marker:
-    def __init__(self, ID, CORNERS, DETECTION: Detection):
+    def __init__(self, ID, CORNERS, DETECTION: Detection, LOG: Log):
         self.id = ID
         self.corners = CORNERS
         self.center_x = int(np.mean(CORNERS[:, 0]))
@@ -56,11 +57,16 @@ def calculate_distance_pixels(m1: Marker, m2: Marker):
 def detection(EXECUTION_CONFIG: ExecutionConfig,
               CAMERA: Camera, 
               DETECTION: Detection, 
-              OUTPUT_CONFIG: OutputConfig):
+              OUTPUT_CONFIG: OutputConfig,
+              LOG: Log):
     
     # ==========================================
     # 1. Setup
     # ==========================================
+
+    start_time = time.time()
+    # Log Initialisation
+    LOG.detection_header(start_time, DETECTION, CAMERA)
 
     # ArUco Setup
     dict = cv2.aruco.getPredefinedDictionary(getattr(cv2.aruco, DETECTION.aruco_dict))
@@ -76,7 +82,6 @@ def detection(EXECUTION_CONFIG: ExecutionConfig,
 
     # State & Program Variables
     global_frame_count = 0
-    #rolling_frame_time = time.time()
     
     verified_marker = None
     detection_history = {} 
@@ -94,11 +99,9 @@ def detection(EXECUTION_CONFIG: ExecutionConfig,
     try : 
         while True :
             
-            # Variables update & FPS
-            frame_time = time.time()
-            # instantaneous_fps = 1.0/max(frame_time-rolling_frame_time, 1e-5)
-            # rolling_frame_time = frame_time
+            # Variables update
             global_frame_count += 1
+            frame_time = datetime.now().strftime("%H:%M:%S.%f")[:-3]
 
             # Initialisation
             frame = picam.capture_array()
@@ -123,7 +126,7 @@ def detection(EXECUTION_CONFIG: ExecutionConfig,
 
                     # Case : Not a valid marker
                     if not marker.is_valid :
-                        # REJECTED_NON_WHITELIST
+                        LOG.detection_new_marker(Detection_Event.REJECTED_NON_WHITELIST, frame_time, global_frame_count, marker.id, center_str=marker.center_str(), corners_str=marker.corners_str())
                         continue
                     
                     # We detected a valid marker
@@ -141,12 +144,17 @@ def detection(EXECUTION_CONFIG: ExecutionConfig,
                         # MARKER VERIFIED
                         if confidence >= DETECTION.verif_min_detection:
                             verified_marker =  VerifiedMarker(marker.id, global_frame_count, marker)
+                            LOG.detection_new_marker(Detection_Event.VERIFIED, frame_time, global_frame_count, marker.id, confidence=confidence, center_str=marker.center_str, corners_str=marker.corners_str(), filename="NONE")
+                        # MARKER SPOTTED
+                        else :
+                            LOG.detection_new_marker(Detection_Event.SPOTTED, frame_time, global_frame_count, marker.id, confidence=confidence, center_str=marker.center_str, corners_str=marker.corners_str(), filename="NONE")
 
                     # Case we track the target 
                     elif verified_marker.is_correct_id(marker) :
                         # New marker in correct target [ADD CONDITION ON METER DISTANCE]
                         if calculate_distance_pixels(marker, verified_marker.last_marker)< DETECTION.track_max_dist_pix :
                             verified_marker.see_marker(global_frame_count, marker)
+                            LOG.detection_new_marker(Detection_Event.TRACKED, frame_time, global_frame_count, marker.id, center_str=marker.center_str, corners_str=marker.corners_str(), filename="NONE")
                     
                     # Case another target (we skip it)
                     else :
@@ -178,7 +186,14 @@ def detection(EXECUTION_CONFIG: ExecutionConfig,
         picam.stop()
         cv2.destroyAllWindows()
 
+    end_time = time.time()
+    avg_fps = global_frame_count/(end_time-start_time) if (end_time-start_time)>0 else 0
+
+    lat, long = verified_marker.get_final_coordinates() if (verified_marker is not None) else None, None
+    
+    nb_frames_with_target = (DETECTION.verif_min_detection-1+len(verified_marker.long_list)) if (verified_marker is not None) else 0
+
+    LOG.detection_footer(end_time, global_frame_count, avg_fps, verified_marker.id, nb_frames_with_target, lat, long)
+
     # Return the coordinates
-    if verified_marker is not None :
-        return verified_marker.get_final_coordinates()
-    return None, None
+    return lat, long
