@@ -195,5 +195,7 @@ def detection(EXECUTION_CONFIG: ExecutionConfig,
 
     LOG.detection_footer(end_time, global_frame_count, avg_fps, verified_marker.id, nb_frames_with_target, lat, long)
 
+    LOG.clean_detection()
+
     # Return the coordinates
     return lat, long
