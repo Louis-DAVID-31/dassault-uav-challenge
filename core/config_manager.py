@@ -66,9 +66,9 @@ def load_config(path: str):
         res_height = config["camera_hardware"]["resolution_height"],
         matrix = np.array(config["camera_hardware"]["camera_matrix"], dtype=np.float64),
         dist_coeffs = np.array(config["camera_hardware"]["distortion_coeffs"], dtype=np.float64),
-        offset_forward = config["camera_hardware"]["offset_gps_forward_m"],
-        offset_right = config["camera_hardware"]["offset_gps_right_m"],
-        offset_down = config["camera_hardware"]["offset_gps_down_m"]
+        offset_forward = config["camera_hardware"]["offset_forward_m"],
+        offset_right = config["camera_hardware"]["offset_right_m"],
+        offset_down = config["camera_hardware"]["offset_down_m"]
     )
 
     # 4. Remplissage du bloc Detection

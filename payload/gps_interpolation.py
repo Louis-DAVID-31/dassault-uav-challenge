@@ -8,6 +8,7 @@ def interpolate_gps_location(pixel_x, pixel_y,
                              CAMERA: Camera,
                              UAV_STATE: UAVState):
     
+    # Récupération instantanée des données de vol (depuis la mémoire partagée)
     lat, lon, alt, roll, pitch, yaw, gimbal_pitch, gimbal_yaw = UAV_STATE.get_current_state()
 
     # ---------------------------------------------------------
@@ -22,7 +23,6 @@ def interpolate_gps_location(pixel_x, pixel_y,
     # ---------------------------------------------------------
     # 2. GIMBAL-ZERO FRAME: Align Camera to Plane Belly
     # ---------------------------------------------------------
-    # Since Gimbal(0,0) means pointing straight down relative to the plane:
     # Camera Z (Out) -> Points Body Z (Down)
     # Camera X (Image Right) -> Points Body Y (Right Wing)
     # Camera Y (Image Bottom) -> Points Body -X (Towards Tail)
@@ -63,18 +63,21 @@ def interpolate_gps_location(pixel_x, pixel_y,
     theta = math.radians(pitch)
     psi = math.radians(yaw)
     
+    # Roll (Rotation around X axis)
     R_roll = np.array([
         [1, 0, 0],
         [0, math.cos(phi), -math.sin(phi)],
         [0, math.sin(phi), math.cos(phi)]
     ])
     
+    # Pitch (Rotation around Y axis)
     R_pitch = np.array([
         [math.cos(theta), 0, math.sin(theta)],
         [0, 1, 0],
         [-math.sin(theta), 0, math.cos(theta)]
     ])
     
+    # Yaw (Rotation around Z axis)
     R_yaw = np.array([
         [math.cos(psi), -math.sin(psi), 0],
         [math.sin(psi), math.cos(psi), 0],
@@ -85,29 +88,50 @@ def interpolate_gps_location(pixel_x, pixel_y,
     R_body_to_ned = R_yaw.dot(R_pitch).dot(R_roll)
     ray_ned = R_body_to_ned.dot(ray_body)
     
-    # ---------------------------------------------------------
+    # =========================================================
+    # 4.5. THE LEVER ARM: Apply Camera Physical Offset
+    # =========================================================
+    # Put the physical offset (Forward, Right, Down) into a vector
+    camera_offset_body = np.array([CAMERA.offset_forward, CAMERA.offset_right, CAMERA.offset_down])
+    
+    # Rotate the physical offset into the Earth (NED) frame
+    camera_offset_ned = R_body_to_ned.dot(camera_offset_body)
+    
+    # =========================================================
     # 5. SCALE TO GROUND: Intersect ray with flat earth
-    # ---------------------------------------------------------
+    # =========================================================
     if ray_ned[2] <= 0:
         # The camera ray is pointing above the horizon. Cannot map to ground.
         return None, None 
         
-    scale = alt / ray_ned[2]
-    dist_north = ray_ned[0] * scale
-    dist_east = ray_ned[1] * scale
+    # Calculate the TRUE altitude of the camera lens (GPS altitude minus camera's Z displacement)
+    true_alt = alt - camera_offset_ned[2]
+    
+    if true_alt <= 0:
+        return None, None # Safety check (UAV crashed or math error)
+
+    # Scale the ray based on the camera's true altitude
+    scale = true_alt / ray_ned[2]
+    
+    # Add the camera's starting position (offset_ned) to the ray's travel distance
+    dist_north = camera_offset_ned[0] + (ray_ned[0] * scale)
+    dist_east = camera_offset_ned[1] + (ray_ned[1] * scale)
     
     # ---------------------------------------------------------
     # 6. CALCULATE FINAL GPS COORDINATES
     # ---------------------------------------------------------
     EARTH_RADIUS = 6378137.0 # WGS84 equatorial radius in meters
     
+    # Convert meters to radians
     lat_offset_rad = dist_north / EARTH_RADIUS
     lon_offset_rad = dist_east / (EARTH_RADIUS * math.cos(math.radians(lat)))
     
+    # Add offsets to original drone GPS position
     target_lat = lat + math.degrees(lat_offset_rad)
     target_lon = lon + math.degrees(lon_offset_rad)
     
     return target_lat, target_lon
+
 
 def calculate_distance_meters(lat1, lon1, lat2, lon2):
     """Calculates distance between two GPS points in meters using Haversine."""

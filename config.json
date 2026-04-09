@@ -16,9 +16,9 @@
             [0.0, 0.0, 1.0]
         ],
         "distortion_coeffs": [-2.10580199e-01, 6.21571346e+00, 1.53852419e-02, -9.00164461e-03, -4.78383013e+01],
-        "offset_gps_forward_m": 0,
-        "offset_gps_right_m": 0,
-        "offset_gps_down_m": 0
+        "offset_forward_m": 0,
+        "offset_right_m": 0,
+        "offset_down_m": 0
     },
 
     "detection_algorithm": {
