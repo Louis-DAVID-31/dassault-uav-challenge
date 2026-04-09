@@ -9,7 +9,7 @@ from datetime import datetime
 
 START_TIME = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-EXECUTION_CONFIG, CAMERA, DETECTION, OUTPUT_CONFIG = load_config("config.json")
+EXECUTION_CONFIG, CAMERA, DETECTION, MAVLINK_CONFIG, OUTPUT_CONFIG = load_config("config.json")
 
 LOG = Log(START_TIME, EXECUTION_CONFIG, OUTPUT_CONFIG)
 LOG.global_header()

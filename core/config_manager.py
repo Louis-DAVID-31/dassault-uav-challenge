@@ -39,6 +39,12 @@ class Detection:
     clahe_clip_limit: float
 
 @dataclass
+class MavlinkConfig :
+    port : str
+    baud : int
+    data_freq : int
+
+@dataclass
 class OutputConfig:
     master_out_dir: str
     log_dir: str
@@ -87,7 +93,14 @@ def load_config(path: str):
         clahe_clip_limit = config["detection_algorithm"]["image_enhancement"]["clahe_clip_limit"]
     )
 
-    # 5. Remplissage du bloc Output
+    # 5. Remplissage du bloc Mavlink
+    MAVLINK_CONFIG = MavlinkConfig(
+        port = config["mavlink"]["port"],
+        baud = config["mavlink"]["baud"],
+        data_freq = config["mavlink"]["data_frequency"]
+    )
+
+    # 6. Remplissage du bloc Output
     master_dir = config["logging_and_output"]["outputs_directory"]
     
     OUTPUT_CONFIG = OutputConfig(
@@ -98,4 +111,4 @@ def load_config(path: str):
         log_mistakes = config["logging_and_output"]["log_mistakes"]
     )
 
-    return EXECUTION_CONFIG, CAMERA, DETECTION, OUTPUT_CONFIG
+    return EXECUTION_CONFIG, CAMERA, DETECTION, MAVLINK_CONFIG, OUTPUT_CONFIG

@@ -38,6 +38,12 @@ No not alter the JSON keys. Only modify the values based on your flight requirem
 
 ---
 
+* **`mavlink.port`**: Chaîne de caractères (String). Le port série matériel utilisé par le Raspberry Pi pour communiquer physiquement avec le contrôleur de vol. Utilisez `/dev/ttyAMA0` ou `/dev/ttyS0` pour une connexion via les broches GPIO, ou `/dev/ttyUSB0` pour une connexion par câble USB.
+* **`mavlink.baud`**: Entier (Integer). La vitesse de communication (Baud rate) de la liaison série. `115200` est le standard industriel pour une connexion directe et rapide entre un ordinateur de bord (Companion Computer) et un contrôleur de vol (Ardupilot/PX4).
+* **`mavlink.data_frequency`**: Entier (Integer). La fréquence (en Hertz) à laquelle le Raspberry Pi exige de recevoir la télémétrie du contrôleur de vol. Fixé à `10`, le système reçoit la position GPS et l'attitude du drone 10 fois par seconde, ce qui garantit que la trigonométrie de ciblage utilise des données ultra-récentes et évite le décalage (lag) lors des vols à grande vitesse.
+
+---
+
 * **`logging_and_output.outputs_directory`**: String. The top-level master folder where all runtime artifacts (flight logs and saved images) are routed. Setting this to `"outputs"` ensures the root repository stays clean during operations.
 * **`logging_and_output.log_directory`**: String. The sub-folder path inside the outputs directory where the `.txt` flight logs are saved (e.g., `"logs/"`).
 * **`logging_and_output.image_save_directory`**: String. The sub-folder path inside the outputs directory where target screenshots are saved (e.g., `"verified_markers/"`).

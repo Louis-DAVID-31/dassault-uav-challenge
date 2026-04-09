@@ -40,6 +40,12 @@
         }
     },
 
+    "mavlink":{
+        "port": "/dev/ttyAMA0",
+        "baud": 115200,
+        "data_frequency": 10
+    },
+
     "logging_and_output":{
         "outputs_directory": "outputs/",
         "log_directory": "logs/",
