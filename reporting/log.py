@@ -64,7 +64,6 @@ class Log:
             self.write_separation(FILE)
 
     def detection_header(self, start_time, DETECTION: Detection, CAMERA: Camera):
-        self.write_separation(LogFile.DETECTION)
         self.write_detection(f"DETECTION Start Time: {start_time}")
         self.write_detection(f"Camera Resolution: {CAMERA.res_width}x{CAMERA.res_height}")
         self.write_detection(f"Marker Processing Parameters: {DETECTION.verif_sliding_window},{DETECTION.verif_min_detection}, {DETECTION.track_max_dist_pix}, {DETECTION.track_max_dist_m}, {DETECTION.stop_window}")
@@ -129,3 +128,12 @@ class Log:
 
     def general_event(self, time, type, msg):
         self.write_general(f"{time}, {type}, {msg}")
+
+    def state_header(self):
+        self.write_state("TIME, LAT, LON, ALT, ROLL, PITCH, YAW, GIMBAL_PITCH, GIMBAL_YAW")
+
+    def state_new_state(self, time, lat, lon, alt, roll, pitch, yaw, gimbal_pitch, gimbal_yaw):
+        self.write_state(f"{time}, {lat}, {lon}, {alt}, {roll}, {pitch}, {yaw}, {gimbal_pitch}, {gimbal_yaw}")
+    
+    def state_footer(self):
+        self.write_separation(LogFile.STATE)
