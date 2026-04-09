@@ -53,7 +53,6 @@ class Log:
         self.write("========================================", FILE)
 
     def global_header(self):
-        """write a general header in all the files"""
         for FILE in LogFile :
             self.write_separation(FILE)
             self.write("UAV MISSION LOG", FILE)
@@ -137,3 +136,9 @@ class Log:
     
     def state_footer(self):
         self.write_separation(LogFile.STATE)
+
+    def global_footer(self, end_time):
+        for FILE in LogFile :
+            self.write("SESSION ENDED", FILE)
+            self.write(f"Date: {end_time}", FILE)
+            self.write_separation(FILE)

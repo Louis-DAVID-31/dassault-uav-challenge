@@ -19,3 +19,10 @@ LOG.global_header()
 # ==========================================
 
 lat, long = detection(EXECUTION_CONFIG, CAMERA, DETECTION, OUTPUT_CONFIG, LOG)
+
+# ==========================================
+# 3. END OF SESSION
+# ==========================================
+
+END_TIME = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+LOG.global_footer(END_TIME)
