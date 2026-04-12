@@ -7,6 +7,7 @@ class Detection_Event(Enum):
     SPOTTED = auto()
     VERIFIED = auto()
     TRACKED = auto()
+    IGNORED = auto()
 
 class LogFile(Enum):
     GENERAL = auto()
@@ -56,7 +57,6 @@ class Log:
         for FILE in LogFile :
             self.write_separation(FILE)
             self.write("UAV MISSION LOG", FILE)
-            self.write("", FILE)
             self.write(f"Session: {self.log_name}", FILE)
             self.write(f"File: {FILE.name}", FILE)
             self.write(f"Date: {self.mission_start_time}", FILE)

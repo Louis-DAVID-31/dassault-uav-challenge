@@ -4,7 +4,7 @@ import time
 import math
 from picamera2 import Picamera2   # type: ignore
 from core import ExecutionConfig, Camera, Detection, OutputConfig
-from reporting import Log, Detection_Event
+from reporting import Log, Detection_Event, TerminalDisplay
 from datetime import datetime
 
 class Marker:
@@ -58,7 +58,8 @@ def detection(EXECUTION_CONFIG: ExecutionConfig,
               CAMERA: Camera, 
               DETECTION: Detection, 
               OUTPUT_CONFIG: OutputConfig,
-              LOG: Log):
+              LOG: Log,
+              TERMINAL: TerminalDisplay):
     
     # ==========================================
     # 1. Setup
@@ -70,28 +71,41 @@ def detection(EXECUTION_CONFIG: ExecutionConfig,
     LOG.detection_header(start_datetime, DETECTION, CAMERA)
 
     # ArUco Setup
-    dict = cv2.aruco.getPredefinedDictionary(getattr(cv2.aruco, DETECTION.aruco_dict))
-    
-    param = cv2.aruco.DetectorParameters()
-    param.minMarkerPerimeterRate = DETECTION.aruco_param_min_marker_perimeter_rate
-    param.maxMarkerPerimeterRate = DETECTION.aruco_param_max_marker_perimeter_rate
-    param.polygonalApproxAccuracyRate = DETECTION.aruco_param_polygonal_approx_accuracy_rate
-    
-    detector = cv2.aruco.ArucoDetector(dict, param)
+    try :
+        dict = cv2.aruco.getPredefinedDictionary(getattr(cv2.aruco, DETECTION.aruco_dict))
+        
+        param = cv2.aruco.DetectorParameters()
+        param.minMarkerPerimeterRate = DETECTION.aruco_param_min_marker_perimeter_rate
+        param.maxMarkerPerimeterRate = DETECTION.aruco_param_max_marker_perimeter_rate
+        param.polygonalApproxAccuracyRate = DETECTION.aruco_param_polygonal_approx_accuracy_rate
+        
+        detector = cv2.aruco.ArucoDetector(dict, param)
 
-    clahe = cv2.createCLAHE(clipLimit=DETECTION.clahe_clip_limit, tileGridSize=(8,8))
+        clahe = cv2.createCLAHE(clipLimit=DETECTION.clahe_clip_limit, tileGridSize=(8,8))
+
+    except Exception :
+        TERMINAL.error("VISION", "Could not setup detector => SHUTTING DOWN")
+        return None, None
 
     # State & Program Variables
     global_frame_count = 0
     
     verified_marker = None
-    detection_history = {} 
+    detection_history = {}
+
+    other_target_history = []
 
     # Camera Initialisation
-    picam = Picamera2()
-    picam_config = picam.create_video_configuration(main={"size": (CAMERA.res_width, CAMERA.res_height)})
-    picam.configure(picam_config)
-    picam.start()
+    try :
+        picam = Picamera2()
+        picam_config = picam.create_video_configuration(main={"size": (CAMERA.res_width, CAMERA.res_height)})
+        picam.configure(picam_config)
+        picam.start()
+    except Exception :
+        TERMINAL.error("VISION", "Could not start picam => SHUTTING DOWN")
+        return None, None
+    
+    TERMINAL.start_vision()
 
     # ==========================================
     # 2. MAIN VISION LOOP
@@ -105,17 +119,23 @@ def detection(EXECUTION_CONFIG: ExecutionConfig,
             frame_time = datetime.now().strftime("%H:%M:%S.%f")[:-3]
 
             # Initialisation
-            frame = picam.capture_array()
-            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            try:
+                frame = picam.capture_array()
+                frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
-            # Image processing
-            processed_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                # Image processing
+                processed_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             
-            if DETECTION.use_clahe :
-                processed_frame = clahe.apply(processed_frame)
+                if DETECTION.use_clahe :
+                    processed_frame = clahe.apply(processed_frame)
+                
+                # Image analyse
+                corners, ids, rejected = detector.detectMarkers(processed_frame)
 
-            # Image analyse
-            corners, ids, rejected = detector.detectMarkers(processed_frame)
+            except Exception :
+                TERMINAL.warning("VISION", "Could not process frame")
+                continue
+
 
             # Marker result analysis
             if ids is not None:
@@ -146,6 +166,7 @@ def detection(EXECUTION_CONFIG: ExecutionConfig,
                         if confidence >= DETECTION.verif_min_detection:
                             verified_marker =  VerifiedMarker(marker.id, global_frame_count, marker)
                             LOG.detection_new_marker(Detection_Event.VERIFIED, frame_time, global_frame_count, marker.id, confidence=confidence, center_str=marker.center_str, corners_str=marker.corners_str(), filename="NONE")
+                            TERMINAL.target_found(verified_marker.id)
                         # MARKER SPOTTED
                         else :
                             LOG.detection_new_marker(Detection_Event.SPOTTED, frame_time, global_frame_count, marker.id, confidence=confidence, center_str=marker.center_str, corners_str=marker.corners_str(), filename="NONE")
@@ -159,25 +180,33 @@ def detection(EXECUTION_CONFIG: ExecutionConfig,
                     
                     # Case another target (we skip it)
                     else :
+                        LOG.detection_new_marker(Detection_Event.IGNORED, frame_time, global_frame_count, marker.id, center_str=marker.center_str, corners_str=marker.corners_str(), filename="NONE")
+                        if not (marker.id in other_target_history) :
+                            TERMINAL.info("VISION", f"Other target found (id:{marker.id}): IGNORED")
+                            other_target_history.append(marker.id)
                         continue
 
             # Case we lost the target
             if verified_marker is not None :
                 if verified_marker.stop_program(global_frame_count,DETECTION) :
-                    break 
+                    break
 
             # Show windows 
-            if EXECUTION_CONFIG.show_real_live_video:
-                cv2.imshow('Real Camera Live Feed', frame)
-            if EXECUTION_CONFIG.show_processed_live_video:
-                cv2.imshow('Processed Live Feed', processed_frame)
-            
-            # Loop interruption
+            try :
+                if EXECUTION_CONFIG.show_real_live_video:
+                    cv2.imshow('Real Camera Live Feed', frame)
+                if EXECUTION_CONFIG.show_processed_live_video:
+                    cv2.imshow('Processed Live Feed', processed_frame)
+            except Exception :
+                TERMINAL.warning("VISION", "Could not show requested live video feed")
+
+            # Keyboard Loop interruption 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
     except Exception:
-        pass
+        TERMINAL.error("VISION", "Could not analyse live feed => SHUTTING DOWN")
+        return None, None
     
     # ==========================================
     # 3. SHUTDOWN & SEND RESULTS
@@ -187,17 +216,18 @@ def detection(EXECUTION_CONFIG: ExecutionConfig,
         picam.stop()
         cv2.destroyAllWindows()
 
-    end_time = time.time()
-    end_datetime = datetime.now().strftime("%H:%M:%S.%f")[:-3]
-    avg_fps = global_frame_count/(end_time-start_time) if (end_time-start_time)>0 else 0
+        end_time = time.time()
+        end_datetime = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+        avg_fps = global_frame_count/(end_time-start_time) if (end_time-start_time)>0 else 0
 
-    lat, long = verified_marker.get_final_coordinates() if (verified_marker is not None) else None, None
-    
-    nb_frames_with_target = (DETECTION.verif_min_detection-1+len(verified_marker.long_list)) if (verified_marker is not None) else 0
+        lat, long = verified_marker.get_final_coordinates() if (verified_marker is not None) else None, None
+        
+        nb_frames_with_target = (DETECTION.verif_min_detection-1+len(verified_marker.long_list)) if (verified_marker is not None) else 0
 
-    LOG.detection_footer(end_datetime, global_frame_count, avg_fps, verified_marker.id, nb_frames_with_target, lat, long)
+        LOG.detection_footer(end_datetime, global_frame_count, avg_fps, verified_marker.id, nb_frames_with_target, lat, long)
+        LOG.clean_detection()
 
-    LOG.clean_detection()
+        TERMINAL.end_detection(lat, long)
 
-    # Return the coordinates
-    return lat, long
+        # Return the coordinates
+        return lat, long
