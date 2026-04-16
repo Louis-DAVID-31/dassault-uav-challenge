@@ -46,7 +46,7 @@ class TerminalDisplay :
     def separation(self):
         self.print("========================================")
 
-    # 2. GENERAL METHODS
+    # 2. GLOBAL METHODS
 
     def header(self, mission_start_time, EXECUTION_CONFIG: ExecutionConfig):
 
@@ -78,3 +78,9 @@ class TerminalDisplay :
         self.info("VISION", f"End of detection")
         self.info("VISION", f"Coordinates: {lat}, {long}")
     
+    # 4. Mavlink
+    def establish_connexion(self):
+        self.info("MAVLINK", "Connecting to FC...")
+    
+    def connexion_established(self):
+        self.success("MAVLINK", "Connected to FC")
