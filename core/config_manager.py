@@ -51,6 +51,7 @@ class OutputConfig:
     image_dir: str
     save_images: bool
     log_mistakes: bool
+    state_log_freq: int
 
 def load_config(path: str):
     # 1. Lecture du fichier JSON
@@ -108,7 +109,8 @@ def load_config(path: str):
         log_dir = os.path.join(master_dir, config["logging_and_output"]["log_directory"]),
         image_dir = os.path.join(master_dir, config["logging_and_output"]["image_save_directory"]),
         save_images = config["logging_and_output"]["save_images_enabled"],
-        log_mistakes = config["logging_and_output"]["log_mistakes"]
+        log_mistakes = config["logging_and_output"]["log_mistakes"],
+        state_log_freq= config["logging_and_output"]["state_logging_frequency"]
     )
 
     return EXECUTION_CONFIG, CAMERA, DETECTION, MAVLINK_CONFIG, OUTPUT_CONFIG

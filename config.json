@@ -51,6 +51,7 @@
         "log_directory": "logs/",
         "image_save_directory": "verified_markers/",
         "save_images_enabled": true,
-        "log_mistakes": true
+        "log_mistakes": true,
+        "state_logging_frequency": 10
     }
 }

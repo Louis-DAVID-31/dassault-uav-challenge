@@ -1,6 +1,6 @@
 from enum import Enum, auto
 import os
-from core.config_manager import OutputConfig, ExecutionConfig, Detection, Camera
+from core.config_manager import OutputConfig, ExecutionConfig, Detection, Camera, MavlinkConfig
 
 class Detection_Event(Enum):
     REJECTED_NON_WHITELIST = auto()
@@ -128,13 +128,21 @@ class Log:
     def general_event(self, time, type, msg):
         self.write_general(f"{time}, {type}, {msg}")
 
-    def state_header(self):
+    def state_header(self, start_time, MAVLINK_CONFIG: MavlinkConfig, OUTPUT_CONFIG: OutputConfig):
+        self.write_detection(f"Recording Start Time: {start_time}")
+        self.write_detection(f"Port: {MAVLINK_CONFIG.port}")
+        self.write_detection(f"Baud: {MAVLINK_CONFIG.baud}")
+        self.write_detection(f"Data frequency: {MAVLINK_CONFIG.data_freq}")
+        self.write_detection(f"Logging Frequency: {OUTPUT_CONFIG.state_log_freq}")
+        self.write_separation(LogFile.STATE)
         self.write_state("TIME, LAT, LON, ALT, ROLL, PITCH, YAW, GIMBAL_PITCH, GIMBAL_YAW")
 
     def state_new_state(self, time, lat, lon, alt, roll, pitch, yaw, gimbal_pitch, gimbal_yaw):
         self.write_state(f"{time}, {lat}, {lon}, {alt}, {roll}, {pitch}, {yaw}, {gimbal_pitch}, {gimbal_yaw}")
     
-    def state_footer(self):
+    def state_footer(self, end_time):
+        self.write_separation(LogFile.STATE)
+        self.write_detection(f"Recording End Time: {end_time}")
         self.write_separation(LogFile.STATE)
 
     def global_footer(self, end_time):
