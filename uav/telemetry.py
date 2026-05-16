@@ -1,17 +1,31 @@
 import math
+import threading
 from pymavlink import mavutil
 from datetime import datetime
 import time
-from uav import UAVState
+from .uav_state import UAVState
 from core import MavlinkConfig, OutputConfig
 from reporting import Log, TerminalDisplay
 
-def flight_controller_loop(STATE: UAVState, LOG: Log, TERMINAL: TerminalDisplay, MAVLINK_CONFIG: MavlinkConfig, OUTPUT_CONFIG: OutputConfig):
+def flight_controller_loop(STATE: UAVState,
+                           LOG: Log,
+                           TERMINAL: TerminalDisplay,
+                           MAVLINK_CONFIG: MavlinkConfig,
+                           OUTPUT_CONFIG: OutputConfig,
+                           stop_event: threading.Event | None = None):
     TERMINAL.establish_connexion()
+    master = None
+    state_log_started = False
     
     try:
         master = mavutil.mavlink_connection(MAVLINK_CONFIG.port, baud=MAVLINK_CONFIG.baud)
-        master.wait_heartbeat()
+
+        while (stop_event is None) or (not stop_event.is_set()):
+            if master.wait_heartbeat(timeout=1) is not None:
+                break
+
+        if (stop_event is not None) and stop_event.is_set():
+            return
         
         TERMINAL.connexion_established()
 
@@ -22,11 +36,12 @@ def flight_controller_loop(STATE: UAVState, LOG: Log, TERMINAL: TerminalDisplay,
 
         start_datetime = datetime.now().strftime("%H:%M:%S.%f")[:-3]
         LOG.state_header(start_datetime, MAVLINK_CONFIG, OUTPUT_CONFIG)
+        state_log_started = True
 
         last_log_time = time.time()
 
-        while True:
-            msg = master.recv_match(blocking=True)
+        while (stop_event is None) or (not stop_event.is_set()):
+            msg = master.recv_match(blocking=True, timeout=1)
             if not msg:
                 continue
 
@@ -59,5 +74,9 @@ def flight_controller_loop(STATE: UAVState, LOG: Log, TERMINAL: TerminalDisplay,
         return
 
     finally:
-        end_datetime = datetime.now().strftime("%H:%M:%S.%f")[:-3]
-        LOG.state_footer(end_datetime)
+        if state_log_started:
+            end_datetime = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+            LOG.state_footer(end_datetime)
+
+        if master is not None:
+            master.close()
