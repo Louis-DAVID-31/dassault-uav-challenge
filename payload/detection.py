@@ -6,9 +6,11 @@ from picamera2 import Picamera2   # type: ignore
 from core import ExecutionConfig, Camera, Detection, OutputConfig
 from reporting import Log, Detection_Event, TerminalDisplay
 from datetime import datetime
+from .gps_interpolation import interpolate_gps_location, calculate_distance_meters
+from uav import UAVState
 
 class Marker:
-    def __init__(self, ID, CORNERS, DETECTION: Detection, LOG: Log):
+    def __init__(self, ID, CORNERS, DETECTION: Detection):
         self.id = ID
         self.corners = CORNERS
         self.center_x = int(np.mean(CORNERS[:, 0]))
@@ -59,7 +61,8 @@ def detection(EXECUTION_CONFIG: ExecutionConfig,
               DETECTION: Detection, 
               OUTPUT_CONFIG: OutputConfig,
               LOG: Log,
-              TERMINAL: TerminalDisplay):
+              TERMINAL: TerminalDisplay,
+              UAV_STATE: UAVState | None = None):
     
     # ==========================================
     # 1. Setup
@@ -165,22 +168,34 @@ def detection(EXECUTION_CONFIG: ExecutionConfig,
                         # MARKER VERIFIED
                         if confidence >= DETECTION.verif_min_detection:
                             verified_marker =  VerifiedMarker(marker.id, global_frame_count, marker)
-                            LOG.detection_new_marker(Detection_Event.VERIFIED, frame_time, global_frame_count, marker.id, confidence=confidence, center_str=marker.center_str, corners_str=marker.corners_str(), filename="NONE")
+                            if UAV_STATE is not None:
+                                lat, long = interpolate_gps_location(marker.center_x, marker.center_y, CAMERA, UAV_STATE)
+                                if (lat is not None) and (long is not None):
+                                    verified_marker.add_coordinates(lat, long)
+                            LOG.detection_new_marker(Detection_Event.VERIFIED, frame_time, global_frame_count, marker.id, confidence=confidence, center_str=marker.center_str(), corners_str=marker.corners_str(), filename="NONE")
                             TERMINAL.target_found(verified_marker.id)
                         # MARKER SPOTTED
                         else :
-                            LOG.detection_new_marker(Detection_Event.SPOTTED, frame_time, global_frame_count, marker.id, confidence=confidence, center_str=marker.center_str, corners_str=marker.corners_str(), filename="NONE")
+                            LOG.detection_new_marker(Detection_Event.SPOTTED, frame_time, global_frame_count, marker.id, confidence=confidence, center_str=marker.center_str(), corners_str=marker.corners_str(), filename="NONE")
 
                     # Case we track the target 
                     elif verified_marker.is_correct_id(marker) :
-                        # New marker in correct target [ADD CONDITION ON METER DISTANCE]
                         if calculate_distance_pixels(marker, verified_marker.last_marker)< DETECTION.track_max_dist_pix :
-                            verified_marker.see_marker(global_frame_count, marker)
-                            LOG.detection_new_marker(Detection_Event.TRACKED, frame_time, global_frame_count, marker.id, center_str=marker.center_str, corners_str=marker.corners_str(), filename="NONE")
+                            if UAV_STATE is None:
+                                verified_marker.see_marker(global_frame_count, marker)
+                                LOG.detection_new_marker(Detection_Event.TRACKED, frame_time, global_frame_count, marker.id, center_str=marker.center_str(), corners_str=marker.corners_str(), filename="NONE")
+                            else:
+                                lat, long = interpolate_gps_location(marker.center_x, marker.center_y, CAMERA, UAV_STATE)
+
+                                if (lat is not None) and (long is not None):
+                                    if (not verified_marker.long_list) or calculate_distance_meters(verified_marker.lat_list[-1], verified_marker.long_list[-1], lat, long)< DETECTION.track_max_dist_m:
+                                        verified_marker.add_coordinates(lat, long)
+                                        verified_marker.see_marker(global_frame_count, marker)
+                                        LOG.detection_new_marker(Detection_Event.TRACKED, frame_time, global_frame_count, marker.id, center_str=marker.center_str(), corners_str=marker.corners_str(), filename="NONE")
                     
                     # Case another target (we skip it)
                     else :
-                        LOG.detection_new_marker(Detection_Event.IGNORED, frame_time, global_frame_count, marker.id, center_str=marker.center_str, corners_str=marker.corners_str(), filename="NONE")
+                        LOG.detection_new_marker(Detection_Event.IGNORED, frame_time, global_frame_count, marker.id, center_str=marker.center_str(), corners_str=marker.corners_str(), filename="NONE")
                         if not (marker.id in other_target_history) :
                             TERMINAL.info("VISION", f"Other target found (id:{marker.id}): IGNORED")
                             other_target_history.append(marker.id)
@@ -220,11 +235,16 @@ def detection(EXECUTION_CONFIG: ExecutionConfig,
         end_datetime = datetime.now().strftime("%H:%M:%S.%f")[:-3]
         avg_fps = global_frame_count/(end_time-start_time) if (end_time-start_time)>0 else 0
 
-        lat, long = verified_marker.get_final_coordinates() if (verified_marker is not None) else None, None
+        if verified_marker is not None:
+            lat, long = verified_marker.get_final_coordinates()
+            id_target_found = verified_marker.id
+        else:
+            lat, long = None, None
+            id_target_found = "NONE"
         
         nb_frames_with_target = (DETECTION.verif_min_detection-1+len(verified_marker.long_list)) if (verified_marker is not None) else 0
 
-        LOG.detection_footer(end_datetime, global_frame_count, avg_fps, verified_marker.id, nb_frames_with_target, lat, long)
+        LOG.detection_footer(end_datetime, global_frame_count, avg_fps, id_target_found, nb_frames_with_target, lat, long)
         LOG.clean_detection()
 
         TERMINAL.end_detection(lat, long)

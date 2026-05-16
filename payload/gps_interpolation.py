@@ -9,7 +9,7 @@ def interpolate_gps_location(pixel_x, pixel_y,
                              UAV_STATE: UAVState):
     
     # Récupération instantanée des données de vol (depuis la mémoire partagée)
-    lat, lon, alt, roll, pitch, yaw, gimbal_pitch, gimbal_yaw = UAV_STATE.get_current_state()
+    lat, lon, alt, roll, pitch, yaw, gimbal_pitch, gimbal_yaw = UAV_STATE.get_state()
 
     # ---------------------------------------------------------
     # 1. CAMERA FRAME: Convert 2D pixel to 3D Camera Ray
