@@ -27,12 +27,14 @@ def flight_controller_loop(STATE: UAVState,
         if (stop_event is not None) and stop_event.is_set():
             return
         
+        STATE.set_mavlink(master)
         TERMINAL.connexion_established()
 
-        master.mav.request_data_stream_send(
-            master.target_system, master.target_component,
-            mavutil.mavlink.MAV_DATA_STREAM_ALL, MAVLINK_CONFIG.data_freq, 1
-        )
+        with STATE.mavlink_lock:
+            master.mav.request_data_stream_send(
+                master.target_system, master.target_component,
+                mavutil.mavlink.MAV_DATA_STREAM_ALL, MAVLINK_CONFIG.data_freq, 1
+            )
 
         start_datetime = datetime.now().strftime("%H:%M:%S.%f")[:-3]
         LOG.state_header(start_datetime, MAVLINK_CONFIG, OUTPUT_CONFIG)
@@ -41,7 +43,8 @@ def flight_controller_loop(STATE: UAVState,
         last_log_time = time.time()
 
         while (stop_event is None) or (not stop_event.is_set()):
-            msg = master.recv_match(blocking=True, timeout=1)
+            with STATE.mavlink_lock:
+                msg = master.recv_match(blocking=True, timeout=1)
             if not msg:
                 continue
 
@@ -79,4 +82,6 @@ def flight_controller_loop(STATE: UAVState,
             LOG.state_footer(end_datetime)
 
         if master is not None:
-            master.close()
+            STATE.clear_mavlink()
+            with STATE.mavlink_lock:
+                master.close()

@@ -2,6 +2,7 @@ from core import load_config
 from reporting import Log, TerminalDisplay
 from payload import detection
 from uav import UAVState
+from uav.navigation import send_dynamic_waypoint, set_guided_mode
 from uav.telemetry import flight_controller_loop
 from datetime import datetime
 import threading
@@ -40,6 +41,14 @@ def mission():
 
     if (lat is None) or (long is None):
         TERMINAL.error("MISSION", "Coordinates not usable => SHUTTING DOWN")
+        return
+
+    if not set_guided_mode(UAV_STATE, TERMINAL):
+        TERMINAL.error("MISSION", "Could not switch Matek to GUIDED => SHUTTING DOWN")
+        return
+
+    if not send_dynamic_waypoint(UAV_STATE, lat, long, TERMINAL):
+        TERMINAL.error("MISSION", "Could not send dynamic waypoint => SHUTTING DOWN")
         return
 
 # ==========================================
