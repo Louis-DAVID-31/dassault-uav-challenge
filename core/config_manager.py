@@ -45,6 +45,18 @@ class MavlinkConfig :
     data_freq : int
 
 @dataclass
+class DeliveryConfig:
+    ground_station_lat: float | None
+    ground_station_long: float | None
+    base_acceptance_radius_m: float
+    target_radius_m: float
+    drop_servo_channel: int
+    drop_servo_pwm: int
+    waypoint_timeout_s: float
+    drop_timeout_s: float
+    distance_check_period_s: float
+
+@dataclass
 class OutputConfig:
     master_out_dir: str
     log_dir: str
@@ -101,7 +113,20 @@ def load_config(path: str):
         data_freq = config["mavlink"]["data_frequency"]
     )
 
-    # 6. Remplissage du bloc Output
+    # 6. Remplissage du bloc Delivery
+    DELIVERY_CONFIG = DeliveryConfig(
+        ground_station_lat = config["delivery"]["ground_station_latitude"],
+        ground_station_long = config["delivery"]["ground_station_longitude"],
+        base_acceptance_radius_m = config["delivery"]["base_acceptance_radius_m"],
+        target_radius_m = config["delivery"]["target_radius_m"],
+        drop_servo_channel = config["delivery"]["drop_servo_channel"],
+        drop_servo_pwm = config["delivery"]["drop_servo_pwm"],
+        waypoint_timeout_s = config["delivery"]["waypoint_timeout_s"],
+        drop_timeout_s = config["delivery"]["drop_timeout_s"],
+        distance_check_period_s = config["delivery"]["distance_check_period_s"]
+    )
+
+    # 7. Remplissage du bloc Output
     master_dir = config["logging_and_output"]["outputs_directory"]
     
     OUTPUT_CONFIG = OutputConfig(
@@ -113,4 +138,4 @@ def load_config(path: str):
         state_log_freq= config["logging_and_output"]["state_logging_frequency"]
     )
 
-    return EXECUTION_CONFIG, CAMERA, DETECTION, MAVLINK_CONFIG, OUTPUT_CONFIG
+    return EXECUTION_CONFIG, CAMERA, DETECTION, MAVLINK_CONFIG, DELIVERY_CONFIG, OUTPUT_CONFIG

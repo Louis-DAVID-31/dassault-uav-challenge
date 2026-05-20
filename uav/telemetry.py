@@ -55,6 +55,8 @@ def flight_controller_loop(STATE: UAVState,
                     STATE.lat = msg.lat / 1e7
                     STATE.lon = msg.lon / 1e7
                     STATE.alt = msg.relative_alt / 1000.0
+                    if hasattr(msg, "vx") and hasattr(msg, "vy"):
+                        STATE.ground_speed = math.sqrt(msg.vx**2 + msg.vy**2) / 100.0
                     
                 elif msg_type == 'ATTITUDE':
                     STATE.roll = math.degrees(msg.roll)
@@ -64,6 +66,9 @@ def flight_controller_loop(STATE: UAVState,
                 elif msg_type == 'MOUNT_STATUS':
                     STATE.gimbal_pitch = msg.pointing_a / 100.0
                     STATE.gimbal_yaw = msg.pointing_c / 100.0
+
+                elif msg_type == 'VFR_HUD':
+                    STATE.ground_speed = msg.groundspeed
             
             current_time = time.time()
             if (current_time - last_log_time) >= (1.0/OUTPUT_CONFIG.state_log_freq):

@@ -2,7 +2,7 @@ from core import load_config
 from reporting import Log, TerminalDisplay
 from payload import detection
 from uav import UAVState
-from uav.navigation import send_dynamic_waypoint, set_guided_mode
+from uav.navigation import send_dynamic_waypoint, set_guided_mode, trigger_servo, wait_until_ballistic_drop_window, wait_until_distance
 from uav.telemetry import flight_controller_loop
 from datetime import datetime
 import threading
@@ -13,7 +13,7 @@ import threading
 
 START_TIME = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-EXECUTION_CONFIG, CAMERA, DETECTION, MAVLINK_CONFIG, OUTPUT_CONFIG = load_config("config.json")
+EXECUTION_CONFIG, CAMERA, DETECTION, MAVLINK_CONFIG, DELIVERY_CONFIG, OUTPUT_CONFIG = load_config("config.json")
 
 LOG = Log(START_TIME, EXECUTION_CONFIG, OUTPUT_CONFIG)
 LOG.global_header()
@@ -43,12 +43,53 @@ def mission():
         TERMINAL.error("MISSION", "Coordinates not usable => SHUTTING DOWN")
         return
 
+    _, _, mission_altitude_m, _, _, _, _, _ = UAV_STATE.get_state()
+
     if not set_guided_mode(UAV_STATE, TERMINAL):
         TERMINAL.error("MISSION", "Could not switch Matek to GUIDED => SHUTTING DOWN")
         return
 
-    if not send_dynamic_waypoint(UAV_STATE, lat, long, TERMINAL):
-        TERMINAL.error("MISSION", "Could not send dynamic waypoint => SHUTTING DOWN")
+    if not send_dynamic_waypoint(UAV_STATE,
+                                 DELIVERY_CONFIG.ground_station_lat,
+                                 DELIVERY_CONFIG.ground_station_long,
+                                 TERMINAL,
+                                 label="base waypoint",
+                                 altitude_m=mission_altitude_m):
+        TERMINAL.error("MISSION", "Could not send base waypoint => SHUTTING DOWN")
+        return
+
+    if not wait_until_distance(UAV_STATE,
+                               DELIVERY_CONFIG.ground_station_lat,
+                               DELIVERY_CONFIG.ground_station_long,
+                               DELIVERY_CONFIG.base_acceptance_radius_m,
+                               TERMINAL,
+                               label="base",
+                               timeout_s=DELIVERY_CONFIG.waypoint_timeout_s,
+                               check_period_s=DELIVERY_CONFIG.distance_check_period_s):
+        TERMINAL.error("MISSION", "Base waypoint was not reached => SHUTTING DOWN")
+        return
+
+    if not send_dynamic_waypoint(UAV_STATE,
+                                 lat,
+                                 long,
+                                 TERMINAL,
+                                 label="target waypoint",
+                                 altitude_m=mission_altitude_m):
+        TERMINAL.error("MISSION", "Could not send target waypoint => SHUTTING DOWN")
+        return
+
+    if not wait_until_ballistic_drop_window(UAV_STATE,
+                                            lat,
+                                            long,
+                                            DELIVERY_CONFIG.target_radius_m,
+                                            TERMINAL,
+                                            timeout_s=DELIVERY_CONFIG.drop_timeout_s,
+                                            check_period_s=DELIVERY_CONFIG.distance_check_period_s):
+        TERMINAL.error("MISSION", "Drop window was not reached => SHUTTING DOWN")
+        return
+
+    if not trigger_servo(UAV_STATE, DELIVERY_CONFIG.drop_servo_channel, DELIVERY_CONFIG.drop_servo_pwm, TERMINAL):
+        TERMINAL.error("MISSION", "Could not trigger drop servo => SHUTTING DOWN")
         return
 
 # ==========================================

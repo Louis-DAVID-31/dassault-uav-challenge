@@ -46,6 +46,18 @@
         "data_frequency": 10
     },
 
+    "delivery":{
+        "ground_station_latitude": null,
+        "ground_station_longitude": null,
+        "base_acceptance_radius_m": 25,
+        "target_radius_m": 5,
+        "drop_servo_channel": 5,
+        "drop_servo_pwm": 1900,
+        "waypoint_timeout_s": 120,
+        "drop_timeout_s": 120,
+        "distance_check_period_s": 0.2
+    },
+
     "logging_and_output":{
         "outputs_directory": "outputs/",
         "log_directory": "logs/",

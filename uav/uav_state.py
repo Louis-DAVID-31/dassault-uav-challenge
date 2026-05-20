@@ -13,12 +13,17 @@ class UAVState :
         self.roll = 0.0
         self.pitch = 0.0
         self.yaw = 0.0
+        self.ground_speed = 0.0
         self.gimbal_pitch = 0.0
         self.gimbal_yaw = 0.0
 
     def get_state(self):
         with self.lock:
             return self.lat, self.lon, self.alt, self.roll, self.pitch, self.yaw, self.gimbal_pitch, self.gimbal_yaw
+
+    def get_ground_speed(self):
+        with self.lock:
+            return self.ground_speed
 
     def set_mavlink(self, mavlink):
         with self.mavlink_lock:

@@ -44,6 +44,18 @@ No not alter the JSON keys. Only modify the values based on your flight requirem
 
 ---
 
+* **`delivery.ground_station_latitude`**: Float ou `null`. Latitude GPS de la base / ground station utilisée comme premier waypoint d'alignement avant l'approche cible. Doit être renseignée avant vol.
+* **`delivery.ground_station_longitude`**: Float ou `null`. Longitude GPS de la base / ground station utilisée comme premier waypoint d'alignement avant l'approche cible. Doit être renseignée avant vol.
+* **`delivery.base_acceptance_radius_m`**: Float. Rayon en mètres dans lequel l'avion est considéré arrivé au waypoint base avant d'envoyer le waypoint cible.
+* **`delivery.target_radius_m`**: Float. Rayon acceptable autour de la cible, en mètres. Le programme calcule la distance de largage à partir de l'altitude relative et de la vitesse sol courante (`vitesse_sol * sqrt(2 * altitude / g)`), puis ouvre la trappe quand l'avion entre dans la fenêtre de largage correspondant à ce rayon. Ce modèle ignore la traînée et le vent : il doit être validé et corrigé par essais.
+* **`delivery.drop_servo_channel`**: Entier. Numéro de sortie servo MAVLink à commander pour ouvrir la trappe. Par défaut `5` pour le port servo 5 du Matek.
+* **`delivery.drop_servo_pwm`**: Entier. Valeur PWM envoyée au servo de largage lors de l'ouverture de la trappe.
+* **`delivery.waypoint_timeout_s`**: Float. Temps maximum d'attente pour atteindre le waypoint base.
+* **`delivery.drop_timeout_s`**: Float. Temps maximum d'attente après envoi du waypoint cible pour atteindre la fenêtre de largage balistique.
+* **`delivery.distance_check_period_s`**: Float. Période en secondes entre deux calculs de distance pendant l'attente de base et de largage.
+
+---
+
 * **`logging_and_output.outputs_directory`**: String. The top-level master folder where all runtime artifacts (flight logs and saved images) are routed. Setting this to `"outputs"` ensures the root repository stays clean during operations.
 * **`logging_and_output.log_directory`**: String. The sub-folder path inside the outputs directory where the `.txt` flight logs are saved (e.g., `"logs/"`).
 * **`logging_and_output.image_save_directory`**: String. The sub-folder path inside the outputs directory where target screenshots are saved (e.g., `"verified_markers/"`).

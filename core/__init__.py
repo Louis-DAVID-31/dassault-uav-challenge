@@ -1,4 +1,4 @@
-from .config_manager import load_config, ExecutionConfig, Camera, Detection, MavlinkConfig, OutputConfig
+from .config_manager import load_config, ExecutionConfig, Camera, Detection, MavlinkConfig, DeliveryConfig, OutputConfig
 
 __all__ = [
     "load_config",
@@ -6,5 +6,6 @@ __all__ = [
     "Camera",
     "Detection",
     "MavlinkConfig",
+    "DeliveryConfig",
     "OutputConfig"
 ]
